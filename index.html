@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>18部作 繪本線上展廳</title>
+    <style>
+        /* === 基礎重設與背景 === */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background-color: #121212; /* 沉浸式深色背景 */
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            margin-bottom: 30px;
+            font-weight: 600;
+            letter-spacing: 2px;
+        }
+
+        /* === 18本繪本的 Grid 網格排版 === */
+        .grid-container {
+            display: grid;
+            /* 預設在桌機/iPad是 6欄 x 3列 的大地圖拼接 */
+            grid-template-columns: repeat(6, 1fr); 
+            gap: 15px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        /* 繪本封面卡片 */
+        .book-card {
+            background-color: #222;
+            aspect-ratio: 1 / 1; /* 嚴格維持 30x30 的正方形比例 */
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid #333;
+        }
+        .book-card:hover {
+            transform: scale(1.03);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            border-color: #555;
+        }
+        .book-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* 確保草稿/完稿完美填滿 */
+        }
+        .book-label {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0,0,0,0.6);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        /* === 彈出視窗 (Modal) 樣式 === */
+        .modal {
+            display: none; /* 預設隱藏 */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95); /* 極黑背景專注看圖 */
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 90%;
+            max-width: 600px; /* 限制繪本顯示大小 */
+        }
+        .modal-image-container {
+            width: 100%;
+            aspect-ratio: 1 / 1; /* 內頁同樣維持正方形 */
+            background-color: #1a1a1a;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.8);
+        }
+        .modal-content img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* 確保內頁完整顯示不被切到 */
+        }
+        
+        /* 頁碼標記 */
+        .page-counter {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #888;
+            letter-spacing: 1px;
+        }
+
+        /* === 控制按鈕 === */
+        .close-btn {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            font-size: 30px;
+            color: #fff;
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .nav-btn:hover { background: rgba(255,255,255,0.3); }
+        .prev-btn { left: -60px; }
+        .next-btn { right: -60px; }
+
+        /* === RWD 響應式：手機畫面改為 2 欄排版 === */
+        @media (max-width: 768px) {
+            .grid-container { grid-template-columns: repeat(2, 1fr); }
+            .prev-btn { left: 10px; background: rgba(0,0,0,0.5); }
+            .next-btn { right: 10px; background: rgba(0,0,0,0.5); }
+            .close-btn { top: -45px; right: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>HAPPENED - 18本繪本大地圖展廳</h1>
+    
+    <div class="grid-container" id="gridContainer"></div>
+
+    <div class="modal" id="bookModal">
+        <div class="modal-content">
+            <button class="close-btn" id="closeBtn">&times;</button>
+            <button class="nav-btn prev-btn" id="prevBtn">&#10094;</button>
+            
+            <div class="modal-image-container">
+                <img src="" id="modalImg" alt="繪本內頁">
+            </div>
+            
+            <button class="nav-btn next-btn" id="nextBtn">&#10095;</button>
+            <div class="page-counter" id="pageCounter">Book 1 - Page 1 / 10</div>
+        </div>
+    </div>
+
+    <script>
+        const TOTAL_BOOKS = 18;
+        const PAGES_PER_BOOK = 10;
+        
+        let currentBook = 1;
+        let currentPage = 1;
+
+        const gridContainer = document.getElementById('gridContainer');
+        const modal = document.getElementById('bookModal');
+        const modalImg = document.getElementById('modalImg');
+        const pageCounter = document.getElementById('pageCounter');
+        
+        // 1. 自動生成 18 張書籍封面 Grid
+        for (let i = 1; i <= TOTAL_BOOKS; i++) {
+            const card = document.createElement('div');
+            card.className = 'book-card';
+            // 點擊事件
+            card.onclick = () => openBook(i);
+            
+            // 這裡對應你的封面圖檔名：images/cover1.jpg ...
+            card.innerHTML = `
+                <img src="images/cover${i}.jpg" onerror="this.src='https://placehold.co/300x300/222/fff?text=Book+${i}+Cover'" alt="Book ${i}">
+                <div class="book-label">Vol.${i}</div>
+            `;
+            gridContainer.appendChild(card);
+        }
+
+        // 2. 打開繪本視窗
+        function openBook(bookNum) {
+            currentBook = bookNum;
+            currentPage = 1; // 每次點開都從第 1 頁開始看
+            updateModalImage();
+            modal.style.display = 'flex';
+        }
+
+        // 3. 更新彈出視窗內的圖片與頁碼
+        function updateModalImage() {
+            // 這裡對應你的內頁圖檔名：images/book1_page1.jpg ...
+            modalImg.src = `images/book${currentBook}_page${currentPage}.jpg`;
+            
+            // 如果圖片還沒畫好，自動顯示預設字樣（方便你跟老師測試網頁）
+            modalImg.onerror = function() {
+                this.src = `https://placehold.co/600x600/333/fff?text=Book+${currentBook}+-+Page+${currentPage}`;
+            };
+            
+            pageCounter.innerText = `第 ${currentBook} 本書 — 第 ${currentPage} / ${PAGES_PER_BOOK} 頁`;
+        }
+
+        // 4. 左右翻頁邏輯
+        document.getElementById('prevBtn').onclick = () => {
+            if (currentPage > 1) {
+                currentPage--;
+                updateModalImage();
+            } else if (currentPage === 1) {
+                // 如果在第一頁按上一頁，自動跳到前一本書的最後一頁
+                if (currentBook > 1) {
+                    currentBook--;
+                    currentPage = PAGES_PER_BOOK;
+                    updateModalImage();
+                }
+            }
+        };
+
+        document.getElementById('nextBtn').onclick = () => {
+            if (currentPage < PAGES_PER_BOOK) {
+                currentPage++;
+                updateModalImage();
+            } else if (currentPage === PAGES_PER_BOOK) {
+                // 如果在最後一頁按下一頁，自動跳到下一本書的第一頁
+                if (currentBook < TOTAL_BOOKS) {
+                    currentBook++;
+                    currentPage = 1;
+                    updateModalImage();
+                }
+            }
+        };
+
+        // 5. 關閉視窗
+        document.getElementById('closeBtn').onclick = () => modal.style.display = 'none';
+        
+        // 點擊黑底部分也可以關閉
+        modal.onclick = (e) => {
+            if (e.target === modal) modal.style.display = 'none';
+        };
+
+        // 鍵盤左右方向鍵與 ESC 鍵支援（用電腦秀給老師看時超方便）
+        document.addEventListener('keydown', (e) => {
+            if (modal.style.display === 'flex') {
+                if (e.key === 'ArrowLeft') document.getElementById('prevBtn').click();
+                if (e.key === 'ArrowRight') document.getElementById('nextBtn').click();
+                if (e.key === 'Escape') modal.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
