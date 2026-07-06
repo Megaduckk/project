@@ -3,301 +3,368 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>畫HAPPENED</title>
+    <title>HAPPENED — 數位繪本展示架</title>
     <style>
-        /* === 基礎重設與背景 === */
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
         body {
-            background-color: #121212; 
-            color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            padding: 40px 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        h1 {
-            margin-bottom: 40px;
-            font-weight: 700;
-            letter-spacing: 4px;
-            font-size: 32px;
-        }
-
-        /* === 18本繪本的大地圖 Grid 網格 === */
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr); 
-            gap: 15px;
-            width: 100%;
-            max-width: 1200px;
-        }
-
-        .book-card {
-            background-color: #222;
-            aspect-ratio: 1 / 1; 
-            border-radius: 6px;
-            overflow: hidden;
-            cursor: pointer;
-            position: relative;
-            transition: transform 0.2s ease;
-            border: 1px solid #2a2a2a;
-        }
-        .book-card:hover {
-            transform: scale(1.03);
-            border-color: #444;
-        }
-        .book-card img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover; 
-        }
-
-        /* === 彈出視窗 Modal === */
-        .modal {
-            display: none; 
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(5, 5, 5, 0.98); 
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-        .modal-content {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 95%;
-            max-width: 1100px; /* 放寬大螢幕，容納雙頁拼接 */
-        }
-        
-        /* 雙跨頁容器：左右完美拼接 */
-        .spread-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            background-color: #111;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        
-        /* 每張內頁的設定 */
-        .page-wrapper {
-            flex: 1;
-            aspect-ratio: 1 / 1; /* 每頁維持正方形 30x30 */
-            max-width: 500px;    /* 限制單頁最大寬度 */
             background-color: #1a1a1a;
+            color: #fff;
+            font-family: "Helvetica Neue", Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
         }
-        .page-wrapper img {
+        .book-container {
+            display: flex;
+            width: 90vw;
+            height: 80vh;
+            max-width: 1400px;
+            background: #2a2a2a;
+            box-shadow: 0 30px 50px rgba(0,0,0,0.5);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+        .page {
+            flex: 1;
+            width: 50%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            position: relative;
+            background: #252525;
+        }
+        .page-left {
+            border-right: 1px solid #333;
+            background: #222;
+        }
+        .page-right {
+            background: #282828;
+        }
+        .image-content {
             width: 100%;
             height: 100%;
             object-fit: contain;
+            display: none;
         }
-
-        /* 頁碼提示 */
-        .page-counter {
-            margin-top: 20px;
-            font-size: 14px;
-            color: #666;
-            letter-spacing: 1px;
+        .image-content.active {
+            display: block;
         }
-
-        /* === 控制按鈕 === */
-        .close-btn {
+        /* 封面模式：左頁隱藏，右頁撐滿 */
+        .cover-mode .page-left {
+            display: none;
+        }
+        .cover-mode .page-right {
+            width: 100%;
+            flex: none;
+        }
+        /* 提示字樣（沒圖時顯示） */
+        .no-img-tip {
             position: absolute;
-            top: -50px;
-            right: 0;
-            font-size: 36px;
-            color: #888;
-            cursor: pointer;
-            background: none;
-            border: none;
-            transition: color 0.2s;
+            color: #666;
+            font-size: 1rem;
+            pointer-events: none;
         }
-        .close-btn:hover { color: #fff; }
-        
+        /* 導覽按鈕 */
         .nav-btn {
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            background: rgba(255,255,255,0.03);
-            color: #666;
-            border: 1px solid #333;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            font-size: 20px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            padding: 20px 15px;
             cursor: pointer;
-            transition: all 0.2s;
+            font-size: 1.5rem;
+            transition: 0.3s;
+            z-index: 10;
         }
-        .nav-btn:hover { 
-            background: rgba(255,255,255,0.1); 
-            color: #fff;
-            border-color: #555;
-        }
-        .prev-btn { left: -70px; }
-        .next-btn { right: -70px; }
+        .nav-btn:hover { background: rgba(255,255,255,0.3); }
+        .prev-btn { left: 10px; border-radius: 0 8px 8px 0; }
+        .next-btn { right: 10px; border-radius: 8px 0 0 8px; }
 
-        /* === 響應式：手機畫面 === */
-        @media (max-width: 768px) {
-            .grid-container { grid-template-columns: repeat(2, 1fr); }
-            .prev-btn { left: 10px; background: rgba(0,0,0,0.6); z-index: 1010; }
-            .next-btn { right: 10px; background: rgba(0,0,0,0.6); z-index: 1010; }
-            .close-btn { top: -45px; right: 10px; }
-            .page-wrapper { max-width: 45%; } /* 手機上縮小並排 */
+        /* 頁碼顯示 */
+        .page-counter {
+            position: absolute;
+            bottom: 20px;
+            right: 30px;
+            background: rgba(0,0,0,0.6);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #aaa;
+            z-index: 5;
         }
+
+        /* ⚙️ 隱藏式控制面板 (滑鼠移到左下角才會顯現) */
+        .admin-panel {
+            position: fixed;
+            bottom: 15px;
+            left: 15px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            z-index: 100;
+            width: 260px;
+            opacity: 0.05;
+            transition: opacity 0.3s ease;
+        }
+        .admin-panel:hover {
+            opacity: 1.0;
+        }
+        .admin-panel h4 {
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            color: #ffb74d;
+            text-align: center;
+        }
+        .admin-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+        }
+        .admin-row select {
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+            padding: 3px;
+            border-radius: 4px;
+            width: 130px;
+        }
+        .file-input-wrapper {
+            position: relative;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .file-input-btn {
+            display: block;
+            width: 100%;
+            background: #2e7d32;
+            color: white;
+            text-align: center;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .file-input-btn:hover { background: #1b5e20; }
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            left: 0; top: 0; opacity: 0;
+            width: 100%; height: 100%;
+            cursor: pointer;
+        }
+        .clear-btn {
+            display: block;
+            width: 100%;
+            background: #c62828;
+            color: white;
+            text-align: center;
+            padding: 4px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            margin-top: 8px;
+            border: none;
+        }
+        .clear-btn:hover { background: #b71c1c; }
     </style>
 </head>
 <body>
 
-    <h1>畫HAPPENED</h1>
-    
-    <div class="grid-container" id="gridContainer"></div>
+    <!-- 導覽按鈕 -->
+    <button class="nav-btn prev-btn" onclick="changeSpread(-1)">&#10094;</button>
 
-    <div class="modal" id="bookModal">
-        <div class="modal-content">
-            <button class="close-btn" id="closeBtn">&times;</button>
-            <button class="nav-btn prev-btn" id="prevBtn">&#10094;</button>
-            
-            <div class="spread-container">
-                <div class="page-wrapper" id="leftPageWrapper">
-                    <img src="" id="leftImg" alt="左頁">
-                </div>
-                <div class="page-wrapper" id="rightPageWrapper">
-                    <img src="" id="rightImg" alt="右頁">
-                </div>
-            </div>
-            
-            <button class="nav-btn next-btn" id="nextBtn">&#10095;</button>
-            <div class="page-counter" id="pageCounter">-</div>
+    <div class="book-container" id="bookContainer">
+        <!-- 左頁 -->
+        <div class="page page-left">
+            <span class="no-img-tip" id="leftTip">暫無圖片</span>
+            <img class="image-content" id="leftImage" src="" alt="左頁插畫">
         </div>
+        <!-- 右頁 -->
+        <div class="page page-right">
+            <span class="no-img-tip" id="rightTip">暫無圖片</span>
+            <img class="image-content" id="rightImage" src="" alt="右頁插畫">
+        </div>
+        <!-- 頁碼 -->
+        <div class="page-counter" id="pageCounter">Cover</div>
+    </div>
+
+    <button class="nav-btn next-btn" onclick="changeSpread(1)">&#10095;</button>
+
+    <!-- ⚙️ 圖片永久更新助手面版 -->
+    <div class="admin-panel">
+        <h4>🎨 畫面永久更新助手</h4>
+        <div class="admin-row">
+            <label>目前作品：</label>
+            <select id="bookSelect" onchange="switchBook()">
+                <option value="book1">第一本故事</option>
+                <option value="book2">第二本故事</option>
+            </select>
+        </div>
+        <div class="admin-row">
+            <label>指定上傳位置：</label>
+            <select id="pageSelect">
+                <!-- 0是封面，1~20是內頁 -->
+                <option value="0">0 - 獨立封面</option>
+            </select>
+        </div>
+        <div class="file-input-wrapper">
+            <div class="file-input-btn">選擇相片隨時更新替換</div>
+            <input type="file" id="imageUploader" accept="image/*" onchange="uploadImage(this)">
+        </div>
+        <button class="clear-btn" onclick="clearCurrentBook()">清空當前書本所有圖片</button>
     </div>
 
     <script>
-        const TOTAL_BOOKS = 18;
-        const TOTAL_PAGES = 11; // 1張封面 + 10張內頁
+        // 總共規劃 20 頁內頁
+        const TOTAL_INTERNAL_PAGES = 20;
         
-        let currentBook = 1;
-        let currentSpreadIndex = 0; // 翻頁進度：0代表封面，1代表第2+3頁，2代表4+5頁...
+        // 目前所在的雙頁組別索引 (0 代表封面)
+        let currentSpreadIdx = 0; 
 
-        const gridContainer = document.getElementById('gridContainer');
-        const modal = document.getElementById('bookModal');
-        const leftImg = document.getElementById('leftImg');
-        const rightImg = document.getElementById('rightImg');
-        const rightPageWrapper = document.getElementById('rightPageWrapper');
-        const pageCounter = document.getElementById('pageCounter');
-        
-        // 1. 生成 18 張簡潔封面 Grid
-        for (let i = 1; i <= TOTAL_BOOKS; i++) {
-            const card = document.createElement('div');
-            card.className = 'book-card';
-            card.onclick = () => openBook(i);
-            
-            card.innerHTML = `
-                <img src="images/cover${i}.jpg" onerror="this.src='https://placehold.co/300x300/1e1e1e/888?text=${i}'" alt="${i}">
-            `;
-            gridContainer.appendChild(card);
+        // 初始化上傳選單的頁數選項 (0為封面，1~20為內頁)
+        const pSelect = document.getElementById('pageSelect');
+        for (let i = 1; i <= TOTAL_INTERNAL_PAGES; i++) {
+            let opt = document.createElement('option');
+            opt.value = i;
+            opt.innerText = `${i} - 第 ${i} 頁`;
+            pSelect.appendChild(opt);
         }
 
-        // 2. 打開繪本
-        function openBook(bookNum) {
-            currentBook = bookNum;
-            currentSpreadIndex = 0; // 預設打開是封面
-            updateSpread();
-            modal.style.display = 'flex';
+        // 切換書本時重設頁數並刷新
+        function switchBook() {
+            currentSpreadIdx = 0;
+            renderSpread();
         }
 
-        // 3. 核心：控制跨頁顯示邏輯
-        function updateSpread() {
-            if (currentSpreadIndex === 0) {
-                // 【封面狀態】只顯示左邊，隱藏右邊
-                rightPageWrapper.style.display = 'none';
-                leftImg.src = `images/book${currentBook}_page1.jpg`;
+        // 渲染雙頁畫面
+        function renderSpread() {
+            const bookKey = document.getElementById('bookSelect').value;
+            const container = document.getElementById('bookContainer');
+            const leftImg = document.getElementById('leftImage');
+            const rightImg = document.getElementById('rightImage');
+            const leftTip = document.getElementById('leftTip');
+            const rightTip = document.getElementById('rightTip');
+            const counter = document.getElementById('pageCounter');
+
+            if (currentSpreadIdx === 0) {
+                // 封面模式：只看第 0 頁
+                container.classList.add('cover-mode');
+                counter.innerText = "Cover";
                 
-                leftImg.onerror = function() {
-                    this.src = `https://placehold.co/500x500/1e1e1e/888?text=${currentBook}+-+1`;
-                };
-                
-                pageCounter.innerText = `${currentBook} — 1`;
-            } else {
-                // 【雙頁狀態】左右都顯示
-                rightPageWrapper.style.display = 'flex';
-                
-                // 計算左右兩邊各是第幾頁
-                let leftPageNum = currentSpreadIndex * 2;
-                let rightPageNum = leftPageNum + 1;
-                
-                // 超過總頁數 11 頁就不顯示右頁
-                if (leftPageNum <= TOTAL_PAGES) {
-                    leftImg.src = `images/book${currentBook}_page${leftPageNum}.jpg`;
-                    leftImg.onerror = function() {
-                        this.src = `https://placehold.co/500x500/1e1e1e/888?text=${currentBook}+-+${leftPageNum}`;
-                    };
-                }
-                
-                if (rightPageNum <= TOTAL_PAGES) {
-                    rightPageWrapper.style.style = 'flex';
-                    rightImg.src = `images/book${currentBook}_page${rightPageNum}.jpg`;
-                    rightImg.onerror = function() {
-                        this.src = `https://placehold.co/500x500/1e1e1e/888?text=${currentBook}+-+${rightPageNum}`;
-                    };
-                    pageCounter.innerText = `${currentBook} — ${leftPageNum} + ${rightPageNum}`;
+                const coverData = localStorage.getItem(`${bookKey}_page0`);
+                if (coverData) {
+                    rightImg.src = coverData;
+                    rightImg.classList.add('active');
+                    rightTip.style.display = 'none';
                 } else {
-                    // 如果剛好封底是單頁落單
-                    rightPageWrapper.style.display = 'none';
-                    pageCounter.innerText = `${currentBook} — ${leftPageNum}`;
+                    rightImg.classList.remove('active');
+                    rightTip.style.display = 'block';
+                    rightTip.innerText = "尚未上傳封面 (Page 0)";
+                }
+            } else {
+                // 內頁模式：成雙成對
+                container.classList.remove('cover-mode');
+                
+                // 算出當前雙頁組對應的左頁與右頁頁碼
+                // 組別 1 => 頁1 和 頁2
+                // 組別 2 => 頁3 和 頁4 ... 依此類推
+                const leftPageNum = (currentSpreadIdx - 1) * 2 + 1;
+                const rightPageNum = leftPageNum + 1;
+                
+                counter.innerText = `Page ${leftPageNum} - ${rightPageNum}`;
+
+                // 渲染左頁
+                const leftData = localStorage.getItem(`${bookKey}_page${leftPageNum}`);
+                if (leftData) {
+                    leftImg.src = leftData;
+                    leftImg.classList.add('active');
+                    leftTip.style.display = 'none';
+                } else {
+                    leftImg.classList.remove('active');
+                    leftTip.style.display = 'block';
+                    leftTip.innerText = `第 ${leftPageNum} 頁 尚未上傳`;
+                }
+
+                // 渲染右頁
+                const rightData = localStorage.getItem(`${bookKey}_page${rightPageNum}`);
+                if (rightData) {
+                    rightImg.src = rightData;
+                    rightImg.classList.add('active');
+                    rightTip.style.display = 'none';
+                } else {
+                    leftImg.style.borderRight = "1px solid #333";
+                    rightImg.classList.remove('active');
+                    rightTip.style.display = 'block';
+                    rightTip.innerText = `第 ${rightPageNum} 頁 尚未上傳`;
                 }
             }
         }
 
-        // 4. 翻頁按鈕邏輯 (以「跨頁」為單位翻動)
-        // 總共 11 頁：Index 0(頁1), Index 1(頁2+3), Index 2(頁4+5), Index 3(頁6+7), Index 4(頁8+9), Index 5(頁10+11)
-        const MAX_SPREAD_INDEX = 5; 
+        // 左右翻頁控制
+        function changeSpread(direction) {
+            // 總共有 1 頁封面 + 10組雙頁 = 共 11 個檔位 (0 到 10)
+            const maxSpreadIdx = TOTAL_INTERNAL_PAGES / 2; 
+            currentSpreadIdx += direction;
+            
+            if (currentSpreadIdx < 0) currentSpreadIdx = 0;
+            if (currentSpreadIdx > maxSpreadIdx) currentSpreadIdx = maxSpreadIdx;
+            
+            renderSpread();
+        }
 
-        document.getElementById('prevBtn').onclick = () => {
-            if (currentSpreadIndex > 0) {
-                currentSpreadIndex--;
-                updateSpread();
-            } else if (currentSpreadIndex === 0 && currentBook > 1) {
-                currentBook--;
-                currentSpreadIndex = MAX_SPREAD_INDEX; // 跳到前一本書的最後一頁
-                updateSpread();
+        // 核心功能：讀取圖片並永久鎖定在瀏覽器本地
+        function uploadImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const bookKey = document.getElementById('bookSelect').value;
+                    const targetPageNum = document.getElementById('pageSelect').value;
+                    
+                    // 核心：將圖片以 Base64 編碼永久存進瀏覽器的 localStorage
+                    localStorage.setItem(`${bookKey}_page${targetPageNum}`, e.target.result);
+                    
+                    // 上傳成功後，自動跳轉到對應的頁數方便看效果
+                    if (targetPageNum == 0) {
+                        currentSpreadIdx = 0;
+                    } else {
+                        currentSpreadIdx = Math.ceil(parseInt(targetPageNum) / 2);
+                    }
+                    
+                    renderSpread();
+                    input.value = ''; // 清空上傳器欄位以便下次重複觸發
+                };
+                reader.readAsDataURL(input.files[0]);
             }
-        };
+        }
 
-        document.getElementById('nextBtn').onclick = () => {
-            if (currentSpreadIndex < MAX_SPREAD_INDEX) {
-                currentSpreadIndex++;
-                updateSpread();
-            } else if (currentSpreadIndex === MAX_SPREAD_INDEX && currentBook < TOTAL_BOOKS) {
-                currentBook++;
-                currentSpreadIndex = 0; // 跳到下一本書的封面
-                updateSpread();
+        // 清空當前書本資料
+        function clearCurrentBook() {
+            if (confirm("確定要清空這本書儲存的所有圖片嗎？")) {
+                const bookKey = document.getElementById('bookSelect').value;
+                for(let i=0; i<=TOTAL_INTERNAL_PAGES; i++) {
+                    localStorage.removeItem(`${bookKey}_page${i}`);
+                }
+                currentSpreadIdx = 0;
+                renderSpread();
             }
-        };
+        }
 
-        // 5. 關閉視窗
-        document.getElementById('closeBtn').onclick = () => modal.style.display = 'none';
-        modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
-        document.addEventListener('keydown', (e) => {
-            if (modal.style.display === 'flex') {
-                if (e.key === 'ArrowLeft') document.getElementById('prevBtn').click();
-                if (e.key === 'ArrowRight') document.getElementById('nextBtn').click();
-                if (e.key === 'Escape') modal.style.display = 'none';
-            }
-        });
+        // 網頁開啟時自動渲染
+        renderSpread();
     </script>
 </body>
 </html>
