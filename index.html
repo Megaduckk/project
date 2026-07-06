@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HAPPENED — 數位繪本展示架</title>
+    <title>畫HAPPENED</title>
     <style>
         * {
             box-sizing: border-box;
@@ -109,12 +109,12 @@
             position: fixed;
             bottom: 15px;
             left: 15px;
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.95);
             padding: 15px;
             border-radius: 8px;
             border: 1px solid #444;
             z-index: 100;
-            width: 260px;
+            width: 280px;
             opacity: 0.05;
             transition: opacity 0.3s ease;
         }
@@ -140,7 +140,7 @@
             border: 1px solid #555;
             padding: 3px;
             border-radius: 4px;
-            width: 130px;
+            width: 160px;
         }
         .file-input-wrapper {
             position: relative;
@@ -198,7 +198,7 @@
             <span class="no-img-tip" id="rightTip">暫無圖片</span>
             <img class="image-content" id="rightImage" src="" alt="右頁插畫">
         </div>
-        <!-- 頁碼 -->
+        <!-- 頁碼與作品名稱 -->
         <div class="page-counter" id="pageCounter">Cover</div>
     </div>
 
@@ -206,18 +206,16 @@
 
     <!-- ⚙️ 圖片永久更新助手面版 -->
     <div class="admin-panel">
-        <h4>🎨 畫面永久更新助手</h4>
+        <h4>🎨 18本書籍管理面板</h4>
         <div class="admin-row">
-            <label>目前作品：</label>
+            <label>切換作品：</label>
             <select id="bookSelect" onchange="switchBook()">
-                <option value="book1">第一本故事</option>
-                <option value="book2">第二本故事</option>
+                <!-- 自動生成 18 本書的選項 -->
             </select>
         </div>
         <div class="admin-row">
             <label>指定上傳位置：</label>
             <select id="pageSelect">
-                <!-- 0是封面，1~20是內頁 -->
                 <option value="0">0 - 獨立封面</option>
             </select>
         </div>
@@ -229,13 +227,20 @@
     </div>
 
     <script>
-        // 總共規劃 20 頁內頁
-        const TOTAL_INTERNAL_PAGES = 20;
-        
-        // 目前所在的雙頁組別索引 (0 代表封面)
+        const TOTAL_BOOKS = 18; // 補回 18 本書
+        const TOTAL_INTERNAL_PAGES = 20; // 每本 20 頁
         let currentSpreadIdx = 0; 
 
-        // 初始化上傳選單的頁數選項 (0為封面，1~20為內頁)
+        // 1. 自動動態生成 18 本書的下拉選單
+        const bookSelect = document.getElementById('bookSelect');
+        for (let b = 1; b <= TOTAL_BOOKS; b++) {
+            let opt = document.createElement('option');
+            opt.value = `book${b}`;
+            opt.innerText = `第 ${b} 本作品`;
+            bookSelect.appendChild(opt);
+        }
+
+        // 2. 初始化上傳選單的頁數選項 (0為封面，1~20為內頁)
         const pSelect = document.getElementById('pageSelect');
         for (let i = 1; i <= TOTAL_INTERNAL_PAGES; i++) {
             let opt = document.createElement('option');
@@ -244,15 +249,16 @@
             pSelect.appendChild(opt);
         }
 
-        // 切換書本時重設頁數並刷新
+        // 切換書籍時
         function switchBook() {
             currentSpreadIdx = 0;
             renderSpread();
         }
 
-        // 渲染雙頁畫面
+        // 渲染畫面
         function renderSpread() {
             const bookKey = document.getElementById('bookSelect').value;
+            const bookNum = bookKey.replace('book', '');
             const container = document.getElementById('bookContainer');
             const leftImg = document.getElementById('leftImage');
             const rightImg = document.getElementById('rightImage');
@@ -261,9 +267,9 @@
             const counter = document.getElementById('pageCounter');
 
             if (currentSpreadIdx === 0) {
-                // 封面模式：只看第 0 頁
+                // 封面模式
                 container.classList.add('cover-mode');
-                counter.innerText = "Cover";
+                counter.innerText = `第 ${bookNum} 本 — 封面`;
                 
                 const coverData = localStorage.getItem(`${bookKey}_page0`);
                 if (coverData) {
@@ -273,21 +279,18 @@
                 } else {
                     rightImg.classList.remove('active');
                     rightTip.style.display = 'block';
-                    rightTip.innerText = "尚未上傳封面 (Page 0)";
+                    rightTip.innerText = `第 ${bookNum} 本：尚未上傳封面 (Page 0)`;
                 }
             } else {
-                // 內頁模式：成雙成對
+                // 內頁模式（左右雙頁對開）
                 container.classList.remove('cover-mode');
                 
-                // 算出當前雙頁組對應的左頁與右頁頁碼
-                // 組別 1 => 頁1 和 頁2
-                // 組別 2 => 頁3 和 頁4 ... 依此類推
                 const leftPageNum = (currentSpreadIdx - 1) * 2 + 1;
                 const rightPageNum = leftPageNum + 1;
                 
-                counter.innerText = `Page ${leftPageNum} - ${rightPageNum}`;
+                counter.innerText = `第 ${bookNum} 本 — Page ${leftPageNum} - ${rightPageNum}`;
 
-                // 渲染左頁
+                // 左頁
                 const leftData = localStorage.getItem(`${bookKey}_page${leftPageNum}`);
                 if (leftData) {
                     leftImg.src = leftData;
@@ -299,14 +302,13 @@
                     leftTip.innerText = `第 ${leftPageNum} 頁 尚未上傳`;
                 }
 
-                // 渲染右頁
+                // 右頁
                 const rightData = localStorage.getItem(`${bookKey}_page${rightPageNum}`);
                 if (rightData) {
                     rightImg.src = rightData;
                     rightImg.classList.add('active');
                     rightTip.style.display = 'none';
                 } else {
-                    leftImg.style.borderRight = "1px solid #333";
                     rightImg.classList.remove('active');
                     rightTip.style.display = 'block';
                     rightTip.innerText = `第 ${rightPageNum} 頁 尚未上傳`;
@@ -314,9 +316,8 @@
             }
         }
 
-        // 左右翻頁控制
+        // 翻頁
         function changeSpread(direction) {
-            // 總共有 1 頁封面 + 10組雙頁 = 共 11 個檔位 (0 到 10)
             const maxSpreadIdx = TOTAL_INTERNAL_PAGES / 2; 
             currentSpreadIdx += direction;
             
@@ -326,7 +327,7 @@
             renderSpread();
         }
 
-        // 核心功能：讀取圖片並永久鎖定在瀏覽器本地
+        // 上傳與永久保存圖片
         function uploadImage(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -334,10 +335,10 @@
                     const bookKey = document.getElementById('bookSelect').value;
                     const targetPageNum = document.getElementById('pageSelect').value;
                     
-                    // 核心：將圖片以 Base64 編碼永久存進瀏覽器的 localStorage
+                    // 永久保存在瀏覽器的本地空間
                     localStorage.setItem(`${bookKey}_page${targetPageNum}`, e.target.result);
                     
-                    // 上傳成功後，自動跳轉到對應的頁數方便看效果
+                    // 自動跳轉到上傳的那一頁看效果
                     if (targetPageNum == 0) {
                         currentSpreadIdx = 0;
                     } else {
@@ -345,16 +346,17 @@
                     }
                     
                     renderSpread();
-                    input.value = ''; // 清空上傳器欄位以便下次重複觸發
+                    input.value = ''; 
                 };
                 reader.readAsDataURL(input.files[0]);
             }
         }
 
-        // 清空當前書本資料
+        // 清空當前書籍
         function clearCurrentBook() {
-            if (confirm("確定要清空這本書儲存的所有圖片嗎？")) {
-                const bookKey = document.getElementById('bookSelect').value;
+            const bookKey = document.getElementById('bookSelect').value;
+            const bookNum = bookKey.replace('book', '');
+            if (confirm(`確定要清空「第 ${bookNum} 本作品」儲存的所有圖片嗎？`)) {
                 for(let i=0; i<=TOTAL_INTERNAL_PAGES; i++) {
                     localStorage.removeItem(`${bookKey}_page${i}`);
                 }
@@ -363,7 +365,7 @@
             }
         }
 
-        // 網頁開啟時自動渲染
+        // 啟動
         renderSpread();
     </script>
 </body>
