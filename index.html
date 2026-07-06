@@ -21,23 +21,16 @@
             overflow-x: hidden;
         }
 
-        /* 📱 原本一進網站的 3×6 封面大目錄畫面 */
+        /* 📱 3×6 封面大目錄畫面 */
         .gallery-view {
             width: 100%;
             max-width: 1400px;
             padding: 40px 20px;
-            display: block; /* 預設一進來就完整顯示 */
-        }
-        .gallery-title {
-            text-align: center;
-            font-size: 2rem;
-            margin-bottom: 40px;
-            letter-spacing: 2px;
-            color: #fff;
+            display: block;
         }
         .grid-container {
             display: grid;
-            grid-template-columns: repeat(6, 1fr); /* 完美的 6×3 橫向排列 */
+            grid-template-columns: repeat(6, 1fr); /* 完美的 3×6 橫向排列 */
             gap: 25px;
             width: 100%;
         }
@@ -51,9 +44,7 @@
             box-shadow: 0 10px 20px rgba(0,0,0,0.3);
             cursor: pointer;
             transition: transform 0.3s, box-shadow 0.3s;
-            aspect-ratio: 3 / 4;
-            display: flex;
-            flex-direction: column;
+            aspect-ratio: 1 / 1; /* 🔲 完美正方形格式 */
             position: relative;
             border: 1px solid #333;
         }
@@ -64,22 +55,12 @@
         }
         .card-cover-img {
             width: 100%;
-            height: 85%;
-            object-fit: cover; /* 讓原本的封面完美滿版 */
+            height: 100%; /* 填滿整個正方形格子 */
+            object-fit: cover; /* 讓原本的封面完美裁切滿版 */
             background: #1a1a1a;
         }
-        .card-title {
-            height: 15%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 0.9rem;
-            background: #252525;
-            color: #ccc;
-            font-weight: 500;
-        }
 
-        /* 📖 點進去後的單本翻頁閱讀畫面 (預設先隱藏) */
+        /* 📖 點進去後的單本翻頁閱讀畫面 */
         .reader-view {
             display: none;
             width: 100vw;
@@ -176,7 +157,7 @@
             z-index: 5;
         }
 
-        /* ⚙️ 隱藏式控制面板 (只有點進去預覽故事、且滑鼠移到左下角才會顯現) */
+        /* ⚙️ 隱藏式控制面板 (滑鼠移到左下角才會顯現) */
         .admin-panel {
             position: fixed;
             bottom: 15px;
@@ -187,9 +168,9 @@
             border: 1px solid #444;
             z-index: 100;
             width: 280px;
-            opacity: 0.01; /* 平時極度隱形 */
+            opacity: 0.01;
             transition: opacity 0.3s ease;
-            display: none; /* 目錄畫面時不顯示 */
+            display: none;
         }
         .admin-panel:hover { opacity: 1.0; }
         .admin-panel h4 { font-size: 0.9rem; margin-bottom: 10px; color: #ffb74d; text-align: center; }
@@ -207,15 +188,14 @@
 </head>
 <body>
 
-    <!-- 1️⃣ 3×6 封面大目錄視圖：原封不動保留你之前的精美封面結構 -->
+    <!-- 1️⃣ 3×6 封面大目錄視圖 (純封面正方形格子，無大標題、無書名文字) -->
     <div class="gallery-view" id="galleryView">
-        <h1 class="gallery-title">HAPPENED — 畢業設計作品集</h1>
         <div class="grid-container" id="gridContainer">
-            <!-- 這裡用 JS 完美生成原本的 18 本繪本卡片，並抓取你預設的封面檔名 -->
+            <!-- 由 JS 完美生成 18 本繪本的正方形卡片 -->
         </div>
     </div>
 
-    <!-- 2️⃣ 單本繪本翻頁閱讀視圖（點進去預覽故事才會切換到這） -->
+    <!-- 2️⃣ 單本繪本翻頁閱讀視圖 -->
     <div class="reader-view" id="readerView">
         <button class="back-to-gallery-btn" onclick="showGallery()">← 返回目錄</button>
         <button class="nav-btn prev-btn" onclick="changeSpread(-1)">&#10094;</button>
@@ -235,7 +215,7 @@
         <button class="nav-btn next-btn" onclick="changeSpread(1)">&#10095;</button>
     </div>
 
-    <!-- ⚙️ 圖片更新功能面板（只有進入內頁且滑鼠移到左下角才理它） -->
+    <!-- ⚙️ 圖片更新功能面板 -->
     <div class="admin-panel" id="adminPanel">
         <h4>🎨 當前繪本圖片更新</h4>
         <div class="admin-row">
@@ -257,18 +237,16 @@
 
     <script>
         const TOTAL_BOOKS = 18;
-        const TOTAL_INTERNAL_PAGES = 20; // 支援每本 20 頁的故事內容
+        const TOTAL_INTERNAL_PAGES = 20; 
         let selectedBookKey = "book1";
         let currentSpreadIdx = 0; 
 
-        // 🌟 請在這裡確認或修改你原本封面圖片的資料夾路徑與檔名格式！
-        // 預設假設你的圖片放在同目錄，檔名是 cover1.jpg, cover2.jpg ... 
-        // 如果你的資料夾叫 images/，可以改成 `images/cover${b}.jpg`
+        // 預設封面圖片路徑格式
         function getOriginalCoverSrc(b) {
             return `cover${b}.jpg`; 
         }
 
-        // 1. 初始化 3×6 的封面大目錄（保留你原本排好的樣子）
+        // 1. 初始化 3×6 的正方形純封面大目錄
         const gridContainer = document.getElementById('gridContainer');
         for (let b = 1; b <= TOTAL_BOOKS; b++) {
             const key = `book${b}`;
@@ -277,17 +255,16 @@
             card.className = 'book-card';
             card.onclick = function() { openBook(key); };
             
-            // 封面優先使用你原本程式碼裡的靜態圖片，如果完全沒上傳過，就走預設路徑
             const originalCover = getOriginalCoverSrc(b);
             
+            // 移除原本下方的文字標題，僅保留滿版正方形圖片
             card.innerHTML = `
-                <img class="card-cover-img" src="${originalCover}" onerror="this.src='https://via.placeholder.com/300x400/222/fff?text=Book+${b}'">
-                <div class="card-title">第 ${b} 本數位繪本</div>
+                <img class="card-cover-img" src="${originalCover}" onerror="this.src='https://via.placeholder.com/400x400/222/fff?text=Book+${b}'">
             `;
             gridContainer.appendChild(card);
         }
 
-        // 2. 初始化建立內頁上傳的頁數下拉選單 (1~20 頁)
+        // 2. 初始化建立內頁頁數下拉選單
         const pSelect = document.getElementById('pageSelect');
         for (let i = 1; i <= TOTAL_INTERNAL_PAGES; i++) {
             let opt = document.createElement('option');
@@ -296,31 +273,29 @@
             pSelect.appendChild(opt);
         }
 
-        // 返回 3×6 總目錄畫面
+        // 返回總目錄畫面
         function showGallery() {
             document.getElementById('readerView').style.display = 'none';
-            document.getElementById('adminPanel').style.display = 'none'; // 隱藏面板
-            document.getElementById('galleryView').style.display = 'block'; // 顯現大目錄
+            document.getElementById('adminPanel').style.display = 'none'; 
+            document.getElementById('galleryView').style.display = 'block'; 
         }
 
-        // 點擊 3×6 封面的其中一本，進入內頁故事預覽
+        // 進入內頁故事預覽
         function openBook(bookKey) {
             selectedBookKey = bookKey;
             const bookNum = bookKey.replace('book', '');
             
-            // 更新更新面板上的文字提示
             document.getElementById('adminCurrentBookLabel').innerText = `第 ${bookNum} 本作品`;
-            
-            currentSpreadIdx = 0; // 點進來先從「書本第一頁/封面」開始看起
+            currentSpreadIdx = 0; 
             
             document.getElementById('galleryView').style.display = 'none';
             document.getElementById('readerView').style.display = 'flex';
-            document.getElementById('adminPanel').style.display = 'block'; // 進入內頁才開啟更新功能
+            document.getElementById('adminPanel').style.display = 'block'; 
             
             renderSpread();
         }
 
-        // 渲染對開故事畫面
+        // 渲染對開畫面
         function renderSpread() {
             const bookNum = selectedBookKey.replace('book', '');
             const container = document.getElementById('bookContainer');
@@ -331,7 +306,6 @@
             const counter = document.getElementById('pageCounter');
 
             if (currentSpreadIdx === 0) {
-                // 封面預覽狀態：直接顯示你原本精美的原畫封面
                 container.classList.add('cover-mode');
                 counter.innerText = `第 ${bookNum} 本 — 封面`;
                 
@@ -341,7 +315,6 @@
                 leftImg.classList.remove('active');
                 leftTip.style.display = 'none';
             } else {
-                // 進入內頁：左右雙頁對開（會優先讀取你隨時用按鈕上傳儲存的最新插畫）
                 container.classList.remove('cover-mode');
                 
                 const leftPageNum = (currentSpreadIdx - 1) * 2 + 1;
@@ -349,7 +322,6 @@
                 
                 counter.innerText = `Book ${bookNum} — Page ${leftPageNum} - ${rightPageNum}`;
 
-                // 【左頁】檢查有沒有上傳最新進度的圖
                 const leftData = localStorage.getItem(`${selectedBookKey}_page${leftPageNum}`);
                 if (leftData) {
                     leftImg.src = leftData;
@@ -361,7 +333,6 @@
                     leftTip.innerText = `第 ${leftPageNum} 頁故事尚未上傳`;
                 }
 
-                // 【右頁】檢查有沒有上傳最新進度的圖
                 const rightData = localStorage.getItem(`${selectedBookKey}_page${rightPageNum}`);
                 if (rightData) {
                     rightImg.src = rightData;
@@ -375,7 +346,7 @@
             }
         }
 
-        // 翻頁功能
+        // 翻頁
         function changeSpread(direction) {
             const maxSpreadIdx = TOTAL_INTERNAL_PAGES / 2; 
             currentSpreadIdx += direction;
@@ -386,19 +357,14 @@
             renderSpread();
         }
 
-        // 點左下角上傳圖片，永久保留新進度
+        // 上傳內頁圖片
         function uploadImage(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const targetPageNum = document.getElementById('pageSelect').value;
-                    
-                    // 永久存入瀏覽器
                     localStorage.setItem(`${selectedBookKey}_page${targetPageNum}`, e.target.result);
-                    
-                    // 自動翻到你剛上傳完的那一頁，讓你立刻檢查效果
                     currentSpreadIdx = Math.ceil(parseInt(targetPageNum) / 2);
-                    
                     renderSpread();
                     input.value = ''; 
                 };
@@ -406,7 +372,7 @@
             }
         }
 
-        // 清空當前書本內頁上傳的快取
+        // 清空儲存
         function clearCurrentBook() {
             const bookNum = selectedBookKey.replace('book', '');
             if (confirm(`確定要清除第 ${bookNum} 本書所有手動上傳的內頁圖片嗎？`)) {
