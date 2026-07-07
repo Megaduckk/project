@@ -38,15 +38,18 @@
             .grid-container { grid-template-columns: repeat(3, 1fr); }
         }
         .book-card {
-            background: #222;
+            background: #1a1a1a;
             border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
             cursor: pointer;
-            transition: transform 0.3s, box-shadow 0.3s;
+            transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
             aspect-ratio: 1 / 1; /* 🔲 完美正方形格式 */
             position: relative;
-            border: 1px solid #333;
+            border: 1px solid #2a2a2a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         .book-card:hover {
             transform: translateY(-8px);
@@ -55,9 +58,21 @@
         }
         .card-cover-img {
             width: 100%;
-            height: 100%; /* 填滿整個正方形格子 */
-            object-fit: cover; /* 讓原本的封面完美裁切滿版 */
-            background: #1a1a1a;
+            height: 100%; 
+            object-fit: cover; 
+            display: block;
+        }
+        /* 當還沒有圖片時的預設發光字樣 */
+        .placeholder-text {
+            position: absolute;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #444;
+            transition: color 0.3s;
+            user-select: none;
+        }
+        .book-card:hover .placeholder-text {
+            color: #ffb74d;
         }
 
         /* 📖 點進去後的單本翻頁閱讀畫面 */
@@ -157,7 +172,7 @@
             z-index: 5;
         }
 
-        /* ⚙️ 隱藏式控制面板 (滑鼠移到左下角才會顯現) */
+        /* ⚙️ 控制面板 (滑鼠移到左下角才會顯現) */
         .admin-panel {
             position: fixed;
             bottom: 15px;
@@ -170,7 +185,6 @@
             width: 280px;
             opacity: 0.01;
             transition: opacity 0.3s ease;
-            display: none;
         }
         .admin-panel:hover { opacity: 1.0; }
         .admin-panel h4 { font-size: 0.9rem; margin-bottom: 10px; color: #ffb74d; text-align: center; }
@@ -222,7 +236,7 @@
             <label>指定更新位置：</label>
             <select id="pageSelect">
                 <option value="cover">📖 封面目錄圖片</option>
-                </select>
+            </select>
         </div>
         <div class="file-input-wrapper">
             <div class="file-input-btn">選擇故事圖片隨時替換</div>
@@ -237,34 +251,36 @@
         let selectedBookKey = "book1";
         let currentSpreadIdx = 0; 
 
-        // 獲取封面圖片（優先抓自訂上傳，沒有才抓預設路徑）
-        function getBookCover(b) {
-            const customCover = localStorage.getItem(`book${b}_cover`);
-            return customCover ? customCover : `cover${b}.jpg`;
+        // 檢查並獲取封面（只拿自訂上傳，沒上傳就回傳 null）
+        function getBookCustomCover(b) {
+            return localStorage.getItem(`book${b}_cover`);
         }
 
         // 1. 初始化 3×6 的總目錄
         function renderGalleryGrid() {
             const gridContainer = document.getElementById('gridContainer');
-            gridContainer.innerHTML = ""; // 清空重新渲染，確保封面更新能同步看見
+            gridContainer.innerHTML = ""; 
             
             for (let b = 1; b <= TOTAL_BOOKS; b++) {
                 const key = `book${b}`;
-                
                 let card = document.createElement('div');
                 card.className = 'book-card';
                 card.onclick = function() { openBook(key); };
                 
-                const coverSrc = getBookCover(b);
+                const customCover = getBookCustomCover(b);
                 
-                card.innerHTML = `
-                    <img class="card-cover-img" id="grid_img_book${b}" src="${coverSrc}" onerror="this.src='https://via.placeholder.com/400x400/222/fff?text=Book+${b}'">
-                `;
+                if (customCover) {
+                    // 如果有手動上傳過封面，顯示封面圖
+                    card.innerHTML = `<img class="card-cover-img" src="${customCover}">`;
+                } else {
+                    // 沒有圖片時，顯示精緻灰色數字方塊，徹底防黑屏
+                    card.innerHTML = `<span class="placeholder-text">BOOK ${b}</span>`;
+                }
                 gridContainer.appendChild(card);
             }
         }
 
-        // 2. 初始化建立內頁頁數下拉選單 (保留原本封面選項在最上頭)
+        // 2. 初始化建立內頁頁數下拉選單
         const pSelect = document.getElementById('pageSelect');
         for (let i = 1; i <= TOTAL_INTERNAL_PAGES; i++) {
             let opt = document.createElement('option');
@@ -273,15 +289,14 @@
             pSelect.appendChild(opt);
         }
 
-        // 返回總目錄畫面
+        // 返回總目錄
         function showGallery() {
             document.getElementById('readerView').style.display = 'none';
-            document.getElementById('adminPanel').style.display = 'none'; 
             document.getElementById('galleryView').style.display = 'block'; 
-            renderGalleryGrid(); // 返回時刷新目錄封面
+            renderGalleryGrid(); 
         }
 
-        // 進入內頁故事預覽
+        // 進入內頁預覽
         function openBook(bookKey) {
             selectedBookKey = bookKey;
             const bookNum = bookKey.replace('book', '');
@@ -291,7 +306,6 @@
             
             document.getElementById('galleryView').style.display = 'none';
             document.getElementById('readerView').style.display = 'flex';
-            document.getElementById('adminPanel').style.display = 'block'; 
             
             renderSpread();
         }
@@ -310,10 +324,16 @@
                 container.classList.add('cover-mode');
                 counter.innerText = `第 ${bookNum} 本 — 封面`;
                 
-                // 封面圖片改為動態抓取
-                rightImg.src = getBookCover(bookNum);
-                rightImg.classList.add('active');
-                rightTip.style.display = 'none';
+                const customCover = getBookCustomCover(bookNum);
+                if (customCover) {
+                    rightImg.src = customCover;
+                    rightImg.classList.add('active');
+                    rightTip.style.display = 'none';
+                } else {
+                    rightImg.classList.remove('active');
+                    rightTip.style.display = 'block';
+                    rightTip.innerText = `封面圖片尚未上傳\n(請將滑鼠移到左下角上傳)`;
+                }
                 leftImg.classList.remove('active');
                 leftTip.style.display = 'none';
             } else {
@@ -359,7 +379,7 @@
             renderSpread();
         }
 
-        // 上傳內頁或封面圖片
+        // 上傳內頁或封面
         function uploadImage(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -367,3 +387,36 @@
                     const targetValue = document.getElementById('pageSelect').value;
                     
                     if (targetValue === "cover") {
+                        localStorage.setItem(`${selectedBookKey}_cover`, e.target.result);
+                        currentSpreadIdx = 0; 
+                    } else {
+                        localStorage.setItem(`${selectedBookKey}_page${targetValue}`, e.target.result);
+                        currentSpreadIdx = Math.ceil(parseInt(targetValue) / 2);
+                    }
+                    
+                    renderSpread();
+                    input.value = ''; 
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // 清空
+        function clearCurrentBook() {
+            const bookNum = selectedBookKey.replace('book', '');
+            if (confirm(`確定要清除第 ${bookNum} 本書所有手動上傳的圖片（含封面）嗎？`)) {
+                localStorage.removeItem(`${selectedBookKey}_cover`);
+                for(let i = 1; i <= TOTAL_INTERNAL_PAGES; i++) {
+                    localStorage.removeItem(`${selectedBookKey}_page${i}`);
+                }
+                currentSpreadIdx = 0;
+                renderSpread();
+            }
+        }
+
+        window.onload = function() {
+            renderGalleryGrid();
+        }
+    </script>
+</body>
+</html>
