@@ -244,7 +244,6 @@
     </div>
 
     <script>
-        // 使用免註冊的公共金鑰通道
         const API_KEY = "6d207e02198a847aa98d0a2a901485a5"; 
 
         const TOTAL_BOOKS = 18;
@@ -347,7 +346,7 @@
             renderSpread();
         }
 
-        // ☁️ 免註冊自動雲端上傳
+        // 🛠️ 終極修復：先轉成 Base64 再進行穩定的雲端上傳
         function uploadImage(input) {
             if (input.files && input.files[0]) {
                 const btn = document.getElementById('uploadBtnText');
@@ -356,43 +355,52 @@
                 input.disabled = true;
 
                 const file = input.files[0];
-                const formData = new FormData();
-                formData.append('image', file);
+                const reader = new FileReader();
+                
+                // 當檔案轉成 Base64 完畢後觸發
+                reader.onload = function(e) {
+                    // 擷取純 base64 字串部分
+                    const base64Data = e.target.result.split(',')[1];
+                    
+                    const formData = new FormData();
+                    formData.append('image', base64Data);
 
-                // 直接調用公共接口
-                fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`, {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(result => {
-                    if (result.success) {
-                        const cloudUrl = result.data.url; // 拿到雲端網址
-                        const targetValue = document.getElementById('pageSelect').value;
-                        
-                        if (targetValue === "cover") {
-                            localStorage.setItem(`${selectedBookKey}_cover`, cloudUrl);
-                            currentSpreadIdx = 0; 
+                    fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.success) {
+                            const cloudUrl = result.data.url; 
+                            const targetValue = document.getElementById('pageSelect').value;
+                            
+                            if (targetValue === "cover") {
+                                localStorage.setItem(`${selectedBookKey}_cover`, cloudUrl);
+                                currentSpreadIdx = 0; 
+                            } else {
+                                const pageNum = parseInt(targetValue);
+                                localStorage.setItem(`${selectedBookKey}_page${pageNum}`, cloudUrl);
+                                currentSpreadIdx = Math.floor((pageNum - 1) / 2) + 1;
+                            }
+                            renderSpread();
                         } else {
-                            const pageNum = parseInt(targetValue);
-                            localStorage.setItem(`${selectedBookKey}_page${pageNum}`, cloudUrl);
-                            currentSpreadIdx = Math.floor((pageNum - 1) / 2) + 1;
+                            alert("上傳失敗，請稍後再試。原因：" + (result.error ? result.error.message : '未知錯誤'));
                         }
-                        renderSpread();
-                    } else {
-                        alert("上傳失敗，請稍後再試。");
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    alert("連線資料庫失敗，請檢查網路。");
-                })
-                .finally(() => {
-                    btn.innerText = "選擇故事圖片隨時替換";
-                    btn.classList.remove('loading');
-                    input.disabled = false;
-                    input.value = ''; 
-                });
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert("連線資料庫失敗，請檢查網路。");
+                    })
+                    .finally(() => {
+                        btn.innerText = "選擇故事圖片隨時替換";
+                        btn.classList.remove('loading');
+                        input.disabled = false;
+                        input.value = ''; 
+                    });
+                };
+                
+                reader.readAsDataURL(file);
             }
         }
 
