@@ -3,199 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>畫HAPPENED</title>
+    <title>畫HAPPENED - 本機大容量版</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            background-color: #111;
-            color: #fff;
+            background-color: #111; color: #fff;
             font-family: "Helvetica Neue", Arial, sans-serif;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow-x: hidden;
+            min-height: 100vh; display: flex;
+            justify-content: center; align-items: center; overflow-x: hidden;
         }
-
-        /* 📱 3×6 封面大目錄畫面 */
-        .gallery-view {
-            width: 100%;
-            max-width: 1400px;
-            padding: 40px 20px;
-            display: block;
-        }
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr); 
-            gap: 25px;
-            width: 100%;
-        }
-        @media (max-width: 1200px) {
-            .grid-container { grid-template-columns: repeat(3, 1fr); }
-        }
+        /* 📱 總目錄 */
+        .gallery-view { width: 100%; max-width: 1400px; padding: 40px 20px; display: block; }
+        .grid-container { display: grid; grid-template-columns: repeat(6, 1fr); gap: 25px; width: 100%; }
+        @media (max-width: 1200px) { .grid-container { grid-template-columns: repeat(3, 1fr); } }
         .book-card {
-            background: #1a1a1a;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-            cursor: pointer;
+            background: #1a1a1a; border-radius: 8px; overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5); cursor: pointer;
             transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
-            aspect-ratio: 1 / 1; 
-            position: relative;
-            border: 1px solid #2a2a2a;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            aspect-ratio: 1 / 1; position: relative; border: 1px solid #2a2a2a;
+            display: flex; justify-content: center; align-items: center;
         }
-        .book-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 15px 30px rgba(255,255,255,0.1);
-            border-color: #555;
-        }
-        .card-cover-img {
-            width: 100%;
-            height: 100%; 
-            object-fit: cover; 
-            display: block;
-        }
-        .placeholder-text {
-            position: absolute;
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #444;
-            transition: color 0.3s;
-            user-select: none;
-        }
-        .book-card:hover .placeholder-text {
-            color: #ffb74d;
-        }
+        .book-card:hover { transform: translateY(-8px); box-shadow: 0 15px 30px rgba(255,255,255,0.1); border-color: #555; }
+        .card-cover-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .placeholder-text { position: absolute; font-size: 1.2rem; font-weight: bold; color: #444; transition: color 0.3s; user-select: none; }
+        .book-card:hover .placeholder-text { color: #ffb74d; }
 
-        /* 📖 單本翻頁閱讀畫面 */
-        .reader-view {
-            display: none;
-            width: 100vw;
-            height: 100vh;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
+        /* 📖 閱讀畫面 */
+        .reader-view { display: none; width: 100vw; height: 100vh; justify-content: center; align-items: center; position: relative; }
         .back-to-gallery-btn {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid #444;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            z-index: 20;
-            font-size: 0.9rem;
-            transition: 0.3s;
+            position: absolute; top: 20px; left: 20px; background: rgba(255,255,255,0.1);
+            border: 1px solid #444; color: white; padding: 8px 16px; border-radius: 4px;
+            cursor: pointer; z-index: 20; font-size: 0.9rem; transition: 0.3s;
         }
         .back-to-gallery-btn:hover { background: rgba(255,255,255,0.3); }
-
         .book-container {
-            display: flex;
-            width: 90vw;
-            height: 80vh;
-            max-width: 1400px;
-            background: #2a2a2a;
-            box-shadow: 0 30px 50px rgba(0,0,0,0.5);
-            border-radius: 12px;
-            overflow: hidden;
-            position: relative;
+            display: flex; width: 90vw; height: 80vh; max-width: 1400px;
+            background: #2a2a2a; box-shadow: 0 30px 50px rgba(0,0,0,0.5); border-radius: 12px; overflow: hidden; position: relative;
         }
-        .page {
-            flex: 1;
-            width: 50%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 10px;
-            position: relative;
-            background: #252525;
-        }
+        .page { flex: 1; width: 50%; height: 100%; display: flex; justify-content: center; align-items: center; padding: 10px; position: relative; background: #252525; }
         .page-left { border-right: 1px solid #333; background: #222; }
         .page-right { background: #282828; }
-        
-        .image-content {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            display: none;
-        }
+        .image-content { width: 100%; height: 100%; object-fit: contain; display: none; }
         .image-content.active { display: block; }
-        
         .cover-mode .page-left { display: none; }
         .cover-mode .page-right { width: 100%; flex: none; }
-        
-        .no-img-tip {
-            position: absolute;
-            color: #666;
-            font-size: 1rem;
-            pointer-events: none;
-            text-align: center;
-        }
-
+        .no-img-tip { position: absolute; color: #666; font-size: 1rem; pointer-events: none; text-align: center; }
         .nav-btn {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(255,255,255,0.1);
-            border: none;
-            color: white;
-            padding: 20px 15px;
-            cursor: pointer;
-            font-size: 1.5rem;
-            transition: 0.3s;
-            z-index: 10;
+            position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.1);
+            border: none; color: white; padding: 20px 15px; cursor: pointer; font-size: 1.5rem; transition: 0.3s; z-index: 10;
         }
         .nav-btn:hover { background: rgba(255,255,255,0.3); }
         .prev-btn { left: 10px; border-radius: 0 8px 8px 0; }
         .next-btn { right: 10px; border-radius: 8px 0 0 8px; }
+        .page-counter { position: absolute; bottom: 20px; right: 30px; background: rgba(0,0,0,0.6); padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; color: #aaa; z-index: 5; }
 
-        .page-counter {
-            position: absolute;
-            bottom: 20px;
-            right: 30px;
-            background: rgba(0,0,0,0.6);
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            color: #aaa;
-            z-index: 5;
-        }
-
-        /* ⚙️ 控制面板 (隱藏式，滑鼠移到左下角顯現) */
+        /* ⚙️ 控制面板 */
         .admin-panel {
-            position: fixed;
-            bottom: 15px;
-            left: 15px;
-            background: rgba(0, 0, 0, 0.95);
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #444;
-            z-index: 100;
-            width: 280px;
-            opacity: 0.01;
-            transition: opacity 0.3s ease;
+            position: fixed; bottom: 15px; left: 15px; background: rgba(0, 0, 0, 0.95);
+            padding: 15px; border-radius: 8px; border: 1px solid #444; z-index: 100; width: 280px; opacity: 0.01; transition: opacity 0.3s ease;
         }
         .admin-panel:hover { opacity: 1.0; }
         .admin-panel h4 { font-size: 0.9rem; margin-bottom: 10px; color: #ffb74d; text-align: center; }
         .admin-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 0.8rem; }
         .admin-row select { background: #333; color: white; border: 1px solid #555; padding: 3px; border-radius: 4px; width: 160px; }
-        
         .file-input-wrapper { position: relative; width: 100%; margin-top: 10px; }
         .file-input-btn { display: block; width: 100%; background: #2e7d32; color: white; text-align: center; padding: 8px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; font-weight: bold; }
-        .file-input-btn.loading { background: #f57c00; cursor: wait; }
         .file-input-wrapper input[type="file"] { position: absolute; left: 0; top: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
-        
         .clear-btn { display: block; width: 100%; background: #c62828; color: white; text-align: center; padding: 4px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; margin-top: 8px; border: none; }
     </style>
 </head>
@@ -208,7 +81,6 @@
     <div class="reader-view" id="readerView">
         <button class="back-to-gallery-btn" onclick="showGallery()">← 返回目錄</button>
         <button class="nav-btn prev-btn" onclick="changeSpread(-1)">&#10094;</button>
-
         <div class="book-container" id="bookContainer">
             <div class="page page-left">
                 <span class="no-img-tip" id="leftTip">暫無圖片</span>
@@ -220,65 +92,87 @@
             </div>
             <div class="page-counter" id="pageCounter">Cover</div>
         </div>
-
         <button class="nav-btn next-btn" onclick="changeSpread(1)">&#10095;</button>
     </div>
 
     <div class="admin-panel" id="adminPanel">
         <h4>🎨 當前繪本圖片更新</h4>
-        <div class="admin-row">
-            <label>目前操作：</label>
-            <span id="adminCurrentBookLabel" style="font-size:0.85rem; color:#ffb74d; font-weight:bold;">第 1 本作品</span>
-        </div>
+        <div class="admin-row"><label>目前操作：</label><span id="adminCurrentBookLabel" style="font-size:0.85rem; color:#ffb74d; font-weight:bold;">第 1 本作品</span></div>
         <div class="admin-row">
             <label>指定更新位置：</label>
-            <select id="pageSelect">
-                <option value="cover">📖 封面目錄圖片</option>
-            </select>
+            <select id="pageSelect"><option value="cover">📖 封面目錄圖片</option></select>
         </div>
         <div class="file-input-wrapper">
-            <div class="file-input-btn" id="uploadBtnText">選擇故事圖片隨時替換</div>
+            <div class="file-input-btn">選擇故事圖片隨時替換</div>
             <input type="file" id="imageUploader" accept="image/*" onchange="uploadImage(this)">
         </div>
         <button class="clear-btn" onclick="clearCurrentBook()">清空這本書的上傳圖片</button>
     </div>
 
     <script>
-        const API_KEY = "6d207e02198a847aa98d0a2a901485a5"; 
-
         const TOTAL_BOOKS = 18;
         const TOTAL_INTERNAL_PAGES = 20; 
         let selectedBookKey = "book1";
         let currentSpreadIdx = 0; 
+        let db = null;
 
-        function getBookCustomCover(b) {
-            return localStorage.getItem(`book${b}_cover`);
+        // 初始化資料庫 (IndexedDB)
+        const request = indexedDB.open("StoryBookDB", 1);
+        request.onupgradeneeded = function(e) {
+            db = e.target.result;
+            if (!db.objectStoreNames.contains("images")) {
+                db.createObjectStore("images");
+            }
+        };
+        request.onsuccess = function(e) {
+            db = e.target.result;
+            renderGalleryGrid();
+        };
+
+        function getDBImage(key, callback) {
+            if(!db) return callback(null);
+            const transaction = db.transaction(["images"], "readonly");
+            const store = transaction.objectStore("images");
+            const req = store.get(key);
+            req.onsuccess = function() { callback(req.result || null); };
+            req.onerror = function() { callback(null); };
+        }
+
+        function setDBImage(key, value, callback) {
+            const transaction = db.transaction(["images"], "readwrite");
+            const store = transaction.objectStore("images");
+            const req = store.put(value, key);
+            req.onsuccess = function() { if(callback) callback(); };
+        }
+
+        function deleteDBImage(key) {
+            const transaction = db.transaction(["images"], "readwrite");
+            store = transaction.objectStore("images").delete(key);
         }
 
         function renderGalleryGrid() {
             const gridContainer = document.getElementById('gridContainer');
             gridContainer.innerHTML = ""; 
             for (let b = 1; b <= TOTAL_BOOKS; b++) {
-                const key = `book${b}`;
+                const key = `book${b}_cover`;
                 let card = document.createElement('div');
                 card.className = 'book-card';
-                card.onclick = function() { openBook(key); };
-                const customCover = getBookCustomCover(b);
-                if (customCover) {
-                    card.innerHTML = `<img class="card-cover-img" src="${customCover}">`;
-                } else {
-                    card.innerHTML = `<span class="placeholder-text">BOOK ${b}</span>`;
-                }
+                card.id = `card_${b}`;
+                card.onclick = (function(num) { return function() { openBook(`book${num}`); }; })(b);
+                card.innerHTML = `<span class="placeholder-text">BOOK ${b}</span>`;
                 gridContainer.appendChild(card);
+
+                getDBImage(key, function(data) {
+                    if(data) {
+                        document.getElementById(`card_${b}`).innerHTML = `<img class="card-cover-img" src="${data}">`;
+                    }
+                });
             }
         }
 
         const pSelect = document.getElementById('pageSelect');
         for (let i = 1; i <= TOTAL_INTERNAL_PAGES; i++) {
-            let opt = document.createElement('option');
-            opt.value = i;
-            opt.innerText = `第 ${i} 頁`;
-            pSelect.appendChild(opt);
+            let opt = document.createElement('option'); opt.value = i; opt.innerText = `第 ${i} 頁`; pSelect.appendChild(opt);
         }
 
         function showGallery() {
@@ -309,12 +203,13 @@
             if (currentSpreadIdx === 0) {
                 container.classList.add('cover-mode');
                 counter.innerText = `第 ${bookNum} 本 — 封面`;
-                const customCover = getBookCustomCover(bookNum);
-                if (customCover) {
-                    rightImg.src = customCover; rightImg.classList.add('active'); rightTip.style.display = 'none';
-                } else {
-                    rightImg.classList.remove('active'); rightTip.style.display = 'block'; rightTip.innerText = `封面圖片尚未上傳`;
-                }
+                getDBImage(`${selectedBookKey}_cover`, function(data) {
+                    if (data) {
+                        rightImg.src = data; rightImg.classList.add('active'); rightTip.style.display = 'none';
+                    } else {
+                        rightImg.classList.remove('active'); rightTip.style.display = 'block'; rightTip.innerText = `封面圖片尚未上傳`;
+                    }
+                });
                 leftImg.classList.remove('active'); leftTip.style.display = 'none';
             } else {
                 container.classList.remove('cover-mode');
@@ -322,19 +217,21 @@
                 const rightPageNum = leftPageNum + 1;
                 counter.innerText = `Book ${bookNum} — Page ${leftPageNum} - ${rightPageNum}`;
 
-                const leftData = localStorage.getItem(`${selectedBookKey}_page${leftPageNum}`);
-                if (leftData) {
-                    leftImg.src = leftData; leftImg.classList.add('active'); leftTip.style.display = 'none';
-                } else {
-                    leftImg.classList.remove('active'); leftTip.style.display = 'block'; leftTip.innerText = `第 ${leftPageNum} 頁故事尚未上傳`;
-                }
+                getDBImage(`${selectedBookKey}_page${leftPageNum}`, function(data) {
+                    if (data) {
+                        leftImg.src = data; leftImg.classList.add('active'); leftTip.style.display = 'none';
+                    } else {
+                        leftImg.classList.remove('active'); leftTip.style.display = 'block'; leftTip.innerText = `第 ${leftPageNum} 頁故事尚未上傳`;
+                    }
+                });
 
-                const rightData = localStorage.getItem(`${selectedBookKey}_page${rightPageNum}`);
-                if (rightData) {
-                    rightImg.src = rightData; rightImg.classList.add('active'); rightTip.style.display = 'none';
-                } else {
-                    rightImg.classList.remove('active'); rightTip.style.display = 'block'; rightTip.innerText = `第 ${rightPageNum} 頁故事尚未上傳`;
-                }
+                getDBImage(`${selectedBookKey}_page${rightPageNum}`, function(data) {
+                    if (data) {
+                        rightImg.src = data; rightImg.classList.add('active'); rightTip.style.display = 'none';
+                    } else {
+                        rightImg.classList.remove('active'); rightTip.style.display = 'block'; rightTip.innerText = `第 ${rightPageNum} 頁故事尚未上傳`;
+                    }
+                });
             }
         }
 
@@ -346,78 +243,40 @@
             renderSpread();
         }
 
-        // 🛠️ 終極修復：先轉成 Base64 再進行穩定的雲端上傳
         function uploadImage(input) {
             if (input.files && input.files[0]) {
-                const btn = document.getElementById('uploadBtnText');
-                btn.innerText = "☁️ 正在上傳至雲端資料庫...";
-                btn.classList.add('loading');
-                input.disabled = true;
-
-                const file = input.files[0];
                 const reader = new FileReader();
-                
-                // 當檔案轉成 Base64 完畢後觸發
                 reader.onload = function(e) {
-                    // 擷取純 base64 字串部分
-                    const base64Data = e.target.result.split(',')[1];
+                    const targetValue = document.getElementById('pageSelect').value;
+                    let dbKey = "";
+                    if (targetValue === "cover") {
+                        dbKey = `${selectedBookKey}_cover`;
+                        currentSpreadIdx = 0;
+                    } else {
+                        const pageNum = parseInt(targetValue);
+                        dbKey = `${selectedBookKey}_page${pageNum}`;
+                        currentSpreadIdx = Math.floor((pageNum - 1) / 2) + 1;
+                    }
                     
-                    const formData = new FormData();
-                    formData.append('image', base64Data);
-
-                    fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`, {
-                        method: 'POST',
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(result => {
-                        if (result.success) {
-                            const cloudUrl = result.data.url; 
-                            const targetValue = document.getElementById('pageSelect').value;
-                            
-                            if (targetValue === "cover") {
-                                localStorage.setItem(`${selectedBookKey}_cover`, cloudUrl);
-                                currentSpreadIdx = 0; 
-                            } else {
-                                const pageNum = parseInt(targetValue);
-                                localStorage.setItem(`${selectedBookKey}_page${pageNum}`, cloudUrl);
-                                currentSpreadIdx = Math.floor((pageNum - 1) / 2) + 1;
-                            }
-                            renderSpread();
-                        } else {
-                            alert("上傳失敗，請稍後再試。原因：" + (result.error ? result.error.message : '未知錯誤'));
-                        }
-                    })
-                    .catch(err => {
-                        console.error(err);
-                        alert("連線資料庫失敗，請檢查網路。");
-                    })
-                    .finally(() => {
-                        btn.innerText = "選擇故事圖片隨時替換";
-                        btn.classList.remove('loading');
-                        input.disabled = false;
-                        input.value = ''; 
+                    setDBImage(dbKey, e.target.result, function() {
+                        renderSpread();
+                        input.value = '';
                     });
                 };
-                
-                reader.readAsDataURL(file);
+                reader.readAsDataURL(input.files[0]);
             }
         }
 
         function clearCurrentBook() {
             const bookNum = selectedBookKey.replace('book', '');
-            if (confirm(`確定要清除第 ${bookNum} 本書所有雲端圖片網址嗎？`)) {
-                localStorage.removeItem(`${selectedBookKey}_cover`);
+            if (confirm(`確定要清除第 ${bookNum} 本書的所有圖片嗎？`)) {
+                deleteDBImage(`${selectedBookKey}_cover`);
                 for(let i = 1; i <= TOTAL_INTERNAL_PAGES; i++) {
-                    localStorage.removeItem(`${selectedBookKey}_page${i}`);
+                    deleteDBImage(`${selectedBookKey}_page${i}`);
                 }
                 currentSpreadIdx = 0;
                 renderSpread();
             }
-        }
-
-        window.onload = function() {
-            renderGalleryGrid();
         }
     </script>
 </body>
