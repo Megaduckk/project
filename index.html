@@ -141,36 +141,46 @@
       background: rgba(255,255,255,0.3);
     }
 
-    /* 30x60 (2:1 比例) 完整跨頁容器 */
+    /* 30x60 (比例 2:1) 的容器 */
     .book-container {
+      display: flex;
       width: 90vw;
       max-width: 1600px;
       aspect-ratio: 2 / 1;
       max-height: 85vh;
-      background: #1e1e1e;
+      background: #1a1a1a;
       box-shadow: 0 30px 50px var(--shadow);
-      border-radius: 8px;
+      border-radius: 6px;
       overflow: hidden;
       position: relative;
-      display: flex;
-      justify-content: center;
-      align-items: center;
     }
 
-    .spread-view {
-      width: 100%;
+    /* 左右兩頁：完全無間隙、無邊框 */
+    .page {
+      flex: 1;
+      width: 50%;
       height: 100%;
-      position: relative;
       display: flex;
       justify-content: center;
       align-items: center;
+      padding: 0; /* 移除邊距以達到無縫 */
+      position: relative;
       background: #222;
+      overflow: hidden;
+    }
+
+    .page-left {
+      border-right: none; /* 移除中間分隔線 */
+    }
+
+    .page-right {
+      border-left: none;
     }
 
     .image-content {
       width: 100%;
       height: 100%;
-      object-fit: contain; /* 完整呈現 30x60 畫面 */
+      object-fit: cover; /* 讓兩張 30x30 正方形填滿左右半邊，組合成無縫 30x60 */
       display: none;
       background: transparent;
     }
@@ -179,10 +189,19 @@
       display: block;
     }
 
+    .cover-mode .page-left {
+      display: none;
+    }
+
+    .cover-mode .page-right {
+      width: 100%;
+      flex: none;
+    }
+
     .no-img-tip {
       position: absolute;
       color: var(--muted);
-      font-size: 1.1rem;
+      font-size: 0.95rem;
       pointer-events: none;
       text-align: center;
       padding: 0 12px;
@@ -355,9 +374,13 @@
     <button class="nav-btn prev-btn" onclick="changeSpread(-1)">&#10094;</button>
 
     <div class="book-container" id="bookContainer">
-      <div class="spread-view">
-        <span class="no-img-tip" id="spreadTip">暫無圖片</span>
-        <img class="image-content" id="spreadImage" src="" alt="30x60跨頁插畫">
+      <div class="page page-left">
+        <span class="no-img-tip" id="leftTip">暫無圖片</span>
+        <img class="image-content" id="leftImage" src="" alt="左頁插畫">
+      </div>
+      <div class="page page-right">
+        <span class="no-img-tip" id="rightTip">暫無圖片</span>
+        <img class="image-content" id="rightImage" src="" alt="右頁插畫">
       </div>
       <div class="page-counter" id="pageCounter">Cover</div>
     </div>
@@ -374,11 +397,11 @@
     <div class="admin-row">
       <label>指定更新位置：</label>
       <select id="pageSelect">
-        <option value="cover">封面圖片</option>
+        <option value="cover">封面目錄圖片</option>
       </select>
     </div>
     <div class="file-input-wrapper">
-      <div class="file-input-btn">上傳 30x60 跨頁圖片</div>
+      <div class="file-input-btn">選擇單頁圖片隨時替換</div>
       <input type="file" id="imageUploader" accept="image/*" onchange="uploadImage(this)">
     </div>
     <button class="clear-btn" onclick="clearCurrentBook()">清空這本書的上傳圖片</button>
@@ -386,9 +409,9 @@
 
   <script>
     const TOTAL_BOOKS = 18;
-    const TOTAL_SPREADS = 10; // 共 10 個 30x60 跨頁（相當於 20 頁內頁）
+    const TOTAL_INTERNAL_PAGES = 20;
     let selectedBookKey = "book1";
-    let currentSpreadIdx = 0; // 0 為封面, 1~10 為跨頁
+    let currentSpreadIdx = 0;
     let db = null;
     let dbReadyResolve;
     const dbReady = new Promise(resolve => { dbReadyResolve = resolve; });
@@ -398,7 +421,7 @@
     }
 
     // 初始化資料庫 (IndexedDB)
-    const request = indexedDB.open("StoryBookDB", 2);
+    const request = indexedDB.open("StoryBookDB", 1);
 
     request.onupgradeneeded = function(e) {
       db = e.target.result;
@@ -481,12 +504,12 @@
       }
     }
 
-    // 動態生成選單（封面 + 10 個跨頁）
+    // 生成第 1 至 20 頁選單
     const pSelect = document.getElementById('pageSelect');
-    for (let i = 1; i <= TOTAL_SPREADS; i++) {
+    for (let i = 1; i <= TOTAL_INTERNAL_PAGES; i++) {
       const opt = document.createElement('option');
-      opt.value = `spread_${i}`;
-      opt.innerText = ` 跨頁 ${i} (P.${(i-1)*2+1}-${i*2})`;
+      opt.value = i;
+      opt.innerText = `第 ${i} 頁`;
       pSelect.appendChild(opt);
     }
 
@@ -508,38 +531,55 @@
 
     function renderSpread() {
       const bookNum = selectedBookKey.replace('book', '');
-      const imgEl = document.getElementById('spreadImage');
-      const tipEl = document.getElementById('spreadTip');
+      const container = document.getElementById('bookContainer');
+      const leftImg = document.getElementById('leftImage');
+      const rightImg = document.getElementById('rightImage');
+      const leftTip = document.getElementById('leftTip');
+      const rightTip = document.getElementById('rightTip');
       const counter = document.getElementById('pageCounter');
 
       if (currentSpreadIdx === 0) {
+        container.classList.add('cover-mode');
         counter.innerText = `第 ${bookNum} 本 — 封面`;
+
         getDBImage(`${selectedBookKey}_cover`, function(data) {
           if (data) {
-            showImageView(imgEl, tipEl, data);
+            showImageView(rightImg, rightTip, data);
           } else {
-            clearImageView(imgEl, tipEl, `封面圖片尚未上傳`);
+            clearImageView(rightImg, rightTip, `封面圖片尚未上傳`);
           }
         });
-      } else {
-        const pageStart = (currentSpreadIdx - 1) * 2 + 1;
-        const pageEnd = pageStart + 1;
-        counter.innerText = `第 ${bookNum} 本 — 跨頁 ${currentSpreadIdx} (P.${pageStart}-${pageEnd})`;
 
-        getDBImage(`${selectedBookKey}_spread${currentSpreadIdx}`, function(data) {
+        clearImageView(leftImg, leftTip, '暫無圖片');
+      } else {
+        container.classList.remove('cover-mode');
+        const leftPageNum = (currentSpreadIdx - 1) * 2 + 1;
+        const rightPageNum = leftPageNum + 1;
+        counter.innerText = `第 ${bookNum} 本 — 第 ${leftPageNum} - ${rightPageNum} 頁`;
+
+        getDBImage(`${selectedBookKey}_page${leftPageNum}`, function(data) {
           if (data) {
-            showImageView(imgEl, tipEl, data);
+            showImageView(leftImg, leftTip, data);
           } else {
-            clearImageView(imgEl, tipEl, `跨頁 ${currentSpreadIdx} (30x60) 故事圖片尚未上傳`);
+            clearImageView(leftImg, leftTip, `第 ${leftPageNum} 頁尚未上傳`);
+          }
+        });
+
+        getDBImage(`${selectedBookKey}_page${rightPageNum}`, function(data) {
+          if (data) {
+            showImageView(rightImg, rightTip, data);
+          } else {
+            clearImageView(rightImg, rightTip, `第 ${rightPageNum} 頁尚未上傳`);
           }
         });
       }
     }
 
     function changeSpread(direction) {
+      const maxSpreadIdx = TOTAL_INTERNAL_PAGES / 2;
       currentSpreadIdx += direction;
       if (currentSpreadIdx < 0) currentSpreadIdx = 0;
-      if (currentSpreadIdx > TOTAL_SPREADS) currentSpreadIdx = TOTAL_SPREADS;
+      if (currentSpreadIdx > maxSpreadIdx) currentSpreadIdx = maxSpreadIdx;
       renderSpread();
     }
 
@@ -561,9 +601,9 @@
           dbKey = `${selectedBookKey}_cover`;
           currentSpreadIdx = 0;
         } else {
-          const spreadNum = parseInt(targetValue.replace('spread_', ''), 10);
-          dbKey = `${selectedBookKey}_spread${spreadNum}`;
-          currentSpreadIdx = spreadNum;
+          const pageNum = parseInt(targetValue, 10);
+          dbKey = `${selectedBookKey}_page${pageNum}`;
+          currentSpreadIdx = Math.floor((pageNum - 1) / 2) + 1;
         }
 
         setDBImage(dbKey, e.target.result, function() {
@@ -585,8 +625,8 @@
       const bookNum = selectedBookKey.replace('book', '');
       if (confirm(`確定要清除第 ${bookNum} 本書的所有圖片嗎？`)) {
         deleteDBImage(`${selectedBookKey}_cover`);
-        for (let i = 1; i <= TOTAL_SPREADS; i++) {
-          deleteDBImage(`${selectedBookKey}_spread${i}`);
+        for (let i = 1; i <= TOTAL_INTERNAL_PAGES; i++) {
+          deleteDBImage(`${selectedBookKey}_page${i}`);
         }
         currentSpreadIdx = 0;
         renderSpread();
