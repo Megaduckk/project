@@ -141,7 +141,7 @@
       background: rgba(255,255,255,0.3);
     }
 
-    /* 30x60 (2:1) 無縫容器 */
+    /* 繪本容器（預設為內頁跨頁 30x60 比例 2:1） */
     .book-container {
       display: flex;
       width: 90vw;
@@ -153,6 +153,13 @@
       border-radius: 6px;
       overflow: hidden;
       position: relative;
+      transition: aspect-ratio 0.2s ease, max-width 0.2s ease;
+    }
+
+    /* 封面模式：改為單一正方形 (1:1) */
+    .book-container.cover-mode {
+      aspect-ratio: 1 / 1;
+      max-width: 85vh; /* 確保不超過畫面高度 */
     }
 
     .page {
@@ -188,6 +195,7 @@
       display: block;
     }
 
+    /* 封面模式隱藏左半邊，讓右半邊佔滿整個正方形 */
     .cover-mode .page-left {
       display: none;
     }
@@ -372,7 +380,7 @@
     <button class="back-to-gallery-btn" onclick="showGallery()">← 返回目錄</button>
     <button class="nav-btn prev-btn" onclick="changeSpread(-1)">&#10094;</button>
 
-    <div class="book-container" id="bookContainer">
+    <div class="book-container cover-mode" id="bookContainer">
       <div class="page page-left">
         <span class="no-img-tip" id="leftTip">暫無圖片</span>
         <img class="image-content" id="leftImage" src="" alt="左頁插畫">
@@ -413,7 +421,7 @@
     let currentSpreadIdx = 0;
     let db = null;
 
-    // 初始化與連線 IndexedDB
+    // 初始化 IndexedDB 連線
     function initDB() {
       return new Promise((resolve, reject) => {
         const req = indexedDB.open("StoryBookDB_v2", 1);
@@ -513,7 +521,7 @@
       }
     }
 
-    // 初始化選單選項
+    // 初始化頁面下拉選項
     const pSelect = document.getElementById('pageSelect');
     for (let i = 1; i <= TOTAL_INTERNAL_PAGES; i++) {
       const opt = document.createElement('option');
@@ -548,6 +556,7 @@
       const counter = document.getElementById('pageCounter');
 
       if (currentSpreadIdx === 0) {
+        // 封面模式：切換容器為正方形 (1:1)
         container.classList.add('cover-mode');
         counter.innerText = `第 ${bookNum} 本 — 封面`;
 
@@ -561,6 +570,7 @@
 
         clearImageView(leftImg, leftTip, '暫無圖片');
       } else {
+        // 故事內頁模式：切換容器為 30x60 (2:1)
         container.classList.remove('cover-mode');
         const leftPageNum = (currentSpreadIdx - 1) * 2 + 1;
         const rightPageNum = leftPageNum + 1;
@@ -643,7 +653,7 @@
       }
     });
 
-    // 啟動點：等資料庫準備完成後才載入主畫面
+    // 頁面載入完成後連線 IndexedDB
     window.addEventListener('DOMContentLoaded', () => {
       initDB().then(() => {
         renderGalleryGrid();
