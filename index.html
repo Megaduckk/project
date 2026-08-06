@@ -86,7 +86,7 @@
     .card-cover-img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain; /* 目錄封面上傳縮圖完整顯示 */
       display: block;
       user-select: none;
       pointer-events: none;
@@ -141,7 +141,7 @@
       background: rgba(255,255,255,0.3);
     }
 
-    /* 繪本容器（預設為內頁跨頁 30x60 比例 2:1） */
+    /* 繪本容器（內頁跨頁 30x60 比例 2:1） */
     .book-container {
       display: flex;
       width: 90vw;
@@ -159,7 +159,7 @@
     /* 封面模式：改為單一正方形 (1:1) */
     .book-container.cover-mode {
       aspect-ratio: 1 / 1;
-      max-width: 85vh; /* 確保不超過畫面高度 */
+      max-width: 85vh; /* 高度上限鎖定在視窗 85vh 內 */
     }
 
     .page {
@@ -183,12 +183,27 @@
       border-left: none;
     }
 
+    /* 圖片改為 contain 確保完全不裁切 */
     .image-content {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
       display: none;
       background: transparent;
+    }
+
+    /* 左頁圖靠右、右頁圖靠左，確保中縫無縫對齊 */
+    .page-left .image-content {
+      object-position: right center;
+    }
+
+    .page-right .image-content {
+      object-position: left center;
+    }
+
+    /* 封面圖片居中 */
+    .cover-mode .page-right .image-content {
+      object-position: center center;
     }
 
     .image-content.active {
