@@ -12,7 +12,6 @@
       --panel: #1a1a1a;
       --panel-2: #252525;
       --line: #2a2a2a;
-      --line-2: #333;
       --text: #fff;
       --muted: #666;
       --accent: #ffb74d;
@@ -142,45 +141,36 @@
       background: rgba(255,255,255,0.3);
     }
 
+    /* 30x60 (2:1 比例) 完整跨頁容器 */
     .book-container {
-      display: flex;
       width: 90vw;
-      height: 80vh;
-      max-width: 1400px;
-      background: #2a2a2a;
+      max-width: 1600px;
+      aspect-ratio: 2 / 1;
+      max-height: 85vh;
+      background: #1e1e1e;
       box-shadow: 0 30px 50px var(--shadow);
-      border-radius: 12px;
+      border-radius: 8px;
       overflow: hidden;
       position: relative;
-    }
-
-    .page {
-      flex: 1;
-      width: 50%;
-      height: 100%;
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 0;
-      margin: 0;
+    }
+
+    .spread-view {
+      width: 100%;
+      height: 100%;
       position: relative;
-      overflow: hidden;
-      background: #111;
-    }
-
-    .page-left {
-      border-right: none;
-      background: #111;
-    }
-
-    .page-right {
-      background: #111;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #222;
     }
 
     .image-content {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain; /* 完整呈現 30x60 畫面 */
       display: none;
       background: transparent;
     }
@@ -189,19 +179,10 @@
       display: block;
     }
 
-    .cover-mode .page-left {
-      display: none;
-    }
-
-    .cover-mode .page-right {
-      width: 100%;
-      flex: none;
-    }
-
     .no-img-tip {
       position: absolute;
       color: var(--muted);
-      font-size: 1rem;
+      font-size: 1.1rem;
       pointer-events: none;
       text-align: center;
       padding: 0 12px;
@@ -240,7 +221,7 @@
       bottom: 20px;
       right: 30px;
       background: rgba(0,0,0,0.6);
-      padding: 5px 12px;
+      padding: 6px 14px;
       border-radius: 20px;
       font-size: 0.85rem;
       color: #aaa;
@@ -258,7 +239,7 @@
       border: 1px solid #444;
       z-index: 100;
       width: 280px;
-      opacity: 0.02;
+      opacity: 0.05;
       transition: opacity 0.25s ease;
     }
 
@@ -286,7 +267,7 @@
       background: #333;
       color: white;
       border: 1px solid #555;
-      padding: 3px;
+      padding: 4px;
       border-radius: 4px;
       width: 160px;
       outline: none;
@@ -349,7 +330,6 @@
 
       .book-container {
         width: 95vw;
-        height: 74vh;
       }
     }
 
@@ -357,10 +337,6 @@
       .grid-container {
         grid-template-columns: repeat(2, 1fr);
         grid-template-rows: repeat(9, 1fr);
-      }
-
-      .book-card:hover {
-        transform: scale(1.02);
       }
 
       .admin-panel {
@@ -379,13 +355,9 @@
     <button class="nav-btn prev-btn" onclick="changeSpread(-1)">&#10094;</button>
 
     <div class="book-container" id="bookContainer">
-      <div class="page page-left">
-        <span class="no-img-tip" id="leftTip">暫無圖片</span>
-        <img class="image-content" id="leftImage" src="" alt="左頁插畫">
-      </div>
-      <div class="page page-right">
-        <span class="no-img-tip" id="rightTip">暫無圖片</span>
-        <img class="image-content" id="rightImage" src="" alt="右頁插畫">
+      <div class="spread-view">
+        <span class="no-img-tip" id="spreadTip">暫無圖片</span>
+        <img class="image-content" id="spreadImage" src="" alt="30x60跨頁插畫">
       </div>
       <div class="page-counter" id="pageCounter">Cover</div>
     </div>
@@ -394,7 +366,7 @@
   </div>
 
   <div class="admin-panel" id="adminPanel">
-    <h4>🎨 當前繪本圖片更新</h4>
+    <h4>當前繪本圖片更新</h4>
     <div class="admin-row">
       <label>目前操作：</label>
       <span id="adminCurrentBookLabel" style="font-size:0.85rem; color:#ffb74d; font-weight:bold;">第 1 本作品</span>
@@ -402,11 +374,11 @@
     <div class="admin-row">
       <label>指定更新位置：</label>
       <select id="pageSelect">
-        <option value="cover">📖 封面目錄圖片</option>
+        <option value="cover">封面圖片</option>
       </select>
     </div>
     <div class="file-input-wrapper">
-      <div class="file-input-btn">選擇故事圖片隨時替換</div>
+      <div class="file-input-btn">上傳 30x60 跨頁圖片</div>
       <input type="file" id="imageUploader" accept="image/*" onchange="uploadImage(this)">
     </div>
     <button class="clear-btn" onclick="clearCurrentBook()">清空這本書的上傳圖片</button>
@@ -414,21 +386,19 @@
 
   <script>
     const TOTAL_BOOKS = 18;
-    const TOTAL_INTERNAL_PAGES = 20;
+    const TOTAL_SPREADS = 10; // 共 10 個 30x60 跨頁（相當於 20 頁內頁）
     let selectedBookKey = "book1";
-    let currentSpreadIdx = 0;
+    let currentSpreadIdx = 0; // 0 為封面, 1~10 為跨頁
     let db = null;
     let dbReadyResolve;
     const dbReady = new Promise(resolve => { dbReadyResolve = resolve; });
 
     function ensureDB() {
-      if (!db) {
-        throw new Error("資料庫尚未初始化完成");
-      }
+      if (!db) throw new Error("資料庫尚未初始化完成");
     }
 
     // 初始化資料庫 (IndexedDB)
-    const request = indexedDB.open("StoryBookDB", 1);
+    const request = indexedDB.open("StoryBookDB", 2);
 
     request.onupgradeneeded = function(e) {
       db = e.target.result;
@@ -461,12 +431,8 @@
       const transaction = db.transaction(["images"], "readwrite");
       const store = transaction.objectStore("images");
       const req = store.put(value, key);
-      req.onsuccess = function() {
-        if (callback) callback();
-      };
-      req.onerror = function() {
-        alert("圖片儲存失敗");
-      };
+      req.onsuccess = function() { if (callback) callback(); };
+      req.onerror = function() { alert("圖片儲存失敗"); };
     }
 
     function deleteDBImage(key) {
@@ -489,35 +455,38 @@
       tipEl.style.display = "none";
     }
 
-    const SUPABASE_URL = "https://xbaebmbyyajcucxvcxdb.supabase.co/storage/v1/object/public/books";
-
     function renderGalleryGrid() {
+      if (!db) return;
       const gridContainer = document.getElementById('gridContainer');
       gridContainer.innerHTML = "";
 
       for (let b = 1; b <= TOTAL_BOOKS; b++) {
+        const key = `book${b}_cover`;
         const card = document.createElement('div');
         card.className = 'book-card';
+        card.id = `card_${b}`;
         card.onclick = (() => () => openBook(`book${b}`))();
-
-        const img = document.createElement('img');
-        img.className = 'card-cover-img';
-        img.src = `${SUPABASE_URL}/book${b}/book${b}cover.png`;
-
-        img.onerror = function () {
-          card.innerHTML = `<span class="placeholder-text">BOOK ${b}</span>`;
-        };
-
-        card.appendChild(img);
+        card.innerHTML = `<span class="placeholder-text">BOOK ${b}</span>`;
         gridContainer.appendChild(card);
+
+        getDBImage(key, function(data) {
+          const el = document.getElementById(`card_${b}`);
+          if (!el) return;
+          if (data) {
+            el.innerHTML = `<img class="card-cover-img" src="${data}" alt="Book ${b} cover">`;
+          } else {
+            el.innerHTML = `<span class="placeholder-text">BOOK ${b}</span>`;
+          }
+        });
       }
     }
 
+    // 動態生成選單（封面 + 10 個跨頁）
     const pSelect = document.getElementById('pageSelect');
-    for (let i = 1; i <= TOTAL_INTERNAL_PAGES; i++) {
+    for (let i = 1; i <= TOTAL_SPREADS; i++) {
       const opt = document.createElement('option');
-      opt.value = i;
-      opt.innerText = `第 ${i} 頁`;
+      opt.value = `spread_${i}`;
+      opt.innerText = ` 跨頁 ${i} (P.${(i-1)*2+1}-${i*2})`;
       pSelect.appendChild(opt);
     }
 
@@ -539,55 +508,38 @@
 
     function renderSpread() {
       const bookNum = selectedBookKey.replace('book', '');
-      const container = document.getElementById('bookContainer');
-      const leftImg = document.getElementById('leftImage');
-      const rightImg = document.getElementById('rightImage');
-      const leftTip = document.getElementById('leftTip');
-      const rightTip = document.getElementById('rightTip');
+      const imgEl = document.getElementById('spreadImage');
+      const tipEl = document.getElementById('spreadTip');
       const counter = document.getElementById('pageCounter');
 
       if (currentSpreadIdx === 0) {
-        container.classList.add('cover-mode');
         counter.innerText = `第 ${bookNum} 本 — 封面`;
-
         getDBImage(`${selectedBookKey}_cover`, function(data) {
           if (data) {
-            showImageView(rightImg, rightTip, data);
+            showImageView(imgEl, tipEl, data);
           } else {
-            clearImageView(rightImg, rightTip, `封面圖片尚未上傳`);
+            clearImageView(imgEl, tipEl, `封面圖片尚未上傳`);
           }
         });
-
-        clearImageView(leftImg, leftTip, '暫無圖片');
       } else {
-        container.classList.remove('cover-mode');
-        const leftPageNum = (currentSpreadIdx - 1) * 2 + 1;
-        const rightPageNum = leftPageNum + 1;
-        counter.innerText = `第 ${bookNum} 本 — 第 ${leftPageNum} - ${rightPageNum} 頁`;
+        const pageStart = (currentSpreadIdx - 1) * 2 + 1;
+        const pageEnd = pageStart + 1;
+        counter.innerText = `第 ${bookNum} 本 — 跨頁 ${currentSpreadIdx} (P.${pageStart}-${pageEnd})`;
 
-        getDBImage(`${selectedBookKey}_page${leftPageNum}`, function(data) {
+        getDBImage(`${selectedBookKey}_spread${currentSpreadIdx}`, function(data) {
           if (data) {
-            showImageView(leftImg, leftTip, data);
+            showImageView(imgEl, tipEl, data);
           } else {
-            clearImageView(leftImg, leftTip, `第 ${leftPageNum} 頁故事尚未上傳`);
-          }
-        });
-
-        getDBImage(`${selectedBookKey}_page${rightPageNum}`, function(data) {
-          if (data) {
-            showImageView(rightImg, rightTip, data);
-          } else {
-            clearImageView(rightImg, rightTip, `第 ${rightPageNum} 頁故事尚未上傳`);
+            clearImageView(imgEl, tipEl, `跨頁 ${currentSpreadIdx} (30x60) 故事圖片尚未上傳`);
           }
         });
       }
     }
 
     function changeSpread(direction) {
-      const maxSpreadIdx = TOTAL_INTERNAL_PAGES / 2;
       currentSpreadIdx += direction;
       if (currentSpreadIdx < 0) currentSpreadIdx = 0;
-      if (currentSpreadIdx > maxSpreadIdx) currentSpreadIdx = maxSpreadIdx;
+      if (currentSpreadIdx > TOTAL_SPREADS) currentSpreadIdx = TOTAL_SPREADS;
       renderSpread();
     }
 
@@ -609,9 +561,9 @@
           dbKey = `${selectedBookKey}_cover`;
           currentSpreadIdx = 0;
         } else {
-          const pageNum = parseInt(targetValue, 10);
-          dbKey = `${selectedBookKey}_page${pageNum}`;
-          currentSpreadIdx = Math.floor((pageNum - 1) / 2) + 1;
+          const spreadNum = parseInt(targetValue.replace('spread_', ''), 10);
+          dbKey = `${selectedBookKey}_spread${spreadNum}`;
+          currentSpreadIdx = spreadNum;
         }
 
         setDBImage(dbKey, e.target.result, function() {
@@ -633,8 +585,8 @@
       const bookNum = selectedBookKey.replace('book', '');
       if (confirm(`確定要清除第 ${bookNum} 本書的所有圖片嗎？`)) {
         deleteDBImage(`${selectedBookKey}_cover`);
-        for (let i = 1; i <= TOTAL_INTERNAL_PAGES; i++) {
-          deleteDBImage(`${selectedBookKey}_page${i}`);
+        for (let i = 1; i <= TOTAL_SPREADS; i++) {
+          deleteDBImage(`${selectedBookKey}_spread${i}`);
         }
         currentSpreadIdx = 0;
         renderSpread();
@@ -642,7 +594,7 @@
       }
     }
 
-    // 讓鍵盤也能翻頁
+    // 鍵盤左右鍵翻頁
     document.addEventListener('keydown', (e) => {
       if (document.getElementById('readerView').style.display === 'flex') {
         if (e.key === 'ArrowLeft') changeSpread(-1);
