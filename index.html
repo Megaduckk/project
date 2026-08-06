@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>畫HAPPENED</title>
+  <title>畫HAPPENED - 繪本</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -31,13 +31,13 @@
       overflow: hidden;
     }
 
-    /* ===== 首頁 / 目錄：滿版無縫拼接 ===== */
+    /* ===== 首頁 / 目錄：18張圖完美無縫拼接 ===== */
     .gallery-view {
       width: 100vw;
       height: 100vh;
       display: block;
       overflow: hidden;
-      background: #0f0f0f;
+      background: #000;
     }
 
     .grid-container {
@@ -47,15 +47,18 @@
       grid-template-columns: repeat(6, 1fr);
       grid-template-rows: repeat(3, 1fr);
       gap: 0;
-      background: #0f0f0f;
+      padding: 0;
+      margin: 0;
+      background: #000;
     }
 
     .book-card {
       position: relative;
       overflow: hidden;
       cursor: pointer;
-      background: #1a1a1a;
+      background: transparent;
       border: none;
+      outline: none;
       border-radius: 0;
       width: 100%;
       height: 100%;
@@ -72,7 +75,7 @@
       transform: scale(1.035);
       z-index: 10;
       filter: brightness(1.08) saturate(1.04);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.35);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
     }
 
     .grid-container:hover .book-card {
@@ -83,10 +86,11 @@
       opacity: 1;
     }
 
+    /* 目錄圖片：強制 100% 滿版填滿，實現完美無縫大圖 */
     .card-cover-img {
       width: 100%;
       height: 100%;
-      object-fit: contain; /* 目錄封面上傳縮圖完整顯示 */
+      object-fit: fill;
       display: block;
       user-select: none;
       pointer-events: none;
@@ -104,7 +108,7 @@
       letter-spacing: 1px;
       user-select: none;
       pointer-events: none;
-      background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0));
+      background: rgba(20, 20, 20, 0.8);
     }
 
     .book-card:hover .placeholder-text {
@@ -159,7 +163,7 @@
     /* 封面模式：改為單一正方形 (1:1) */
     .book-container.cover-mode {
       aspect-ratio: 1 / 1;
-      max-width: 85vh; /* 高度上限鎖定在視窗 85vh 內 */
+      max-width: 85vh;
     }
 
     .page {
@@ -183,7 +187,7 @@
       border-left: none;
     }
 
-    /* 圖片改為 contain 確保完全不裁切 */
+    /* 閱讀畫面內的圖片：採用 contain 保障插畫細節絕不裁切 */
     .image-content {
       width: 100%;
       height: 100%;
@@ -192,7 +196,6 @@
       background: transparent;
     }
 
-    /* 左頁圖靠右、右頁圖靠左，確保中縫無縫對齊 */
     .page-left .image-content {
       object-position: right center;
     }
@@ -201,7 +204,6 @@
       object-position: left center;
     }
 
-    /* 封面圖片居中 */
     .cover-mode .page-right .image-content {
       object-position: center center;
     }
@@ -210,7 +212,6 @@
       display: block;
     }
 
-    /* 封面模式隱藏左半邊，讓右半邊佔滿整個正方形 */
     .cover-mode .page-left {
       display: none;
     }
@@ -436,7 +437,6 @@
     let currentSpreadIdx = 0;
     let db = null;
 
-    // 初始化 IndexedDB 連線
     function initDB() {
       return new Promise((resolve, reject) => {
         const req = indexedDB.open("StoryBookDB_v2", 1);
@@ -536,7 +536,6 @@
       }
     }
 
-    // 初始化頁面下拉選項
     const pSelect = document.getElementById('pageSelect');
     for (let i = 1; i <= TOTAL_INTERNAL_PAGES; i++) {
       const opt = document.createElement('option');
@@ -571,7 +570,6 @@
       const counter = document.getElementById('pageCounter');
 
       if (currentSpreadIdx === 0) {
-        // 封面模式：切換容器為正方形 (1:1)
         container.classList.add('cover-mode');
         counter.innerText = `第 ${bookNum} 本 — 封面`;
 
@@ -585,7 +583,6 @@
 
         clearImageView(leftImg, leftTip, '暫無圖片');
       } else {
-        // 故事內頁模式：切換容器為 30x60 (2:1)
         container.classList.remove('cover-mode');
         const leftPageNum = (currentSpreadIdx - 1) * 2 + 1;
         const rightPageNum = leftPageNum + 1;
@@ -659,7 +656,6 @@
       }
     }
 
-    // 鍵盤左右鍵翻頁
     document.addEventListener('keydown', (e) => {
       if (document.getElementById('readerView').style.display === 'flex') {
         if (e.key === 'ArrowLeft') changeSpread(-1);
@@ -668,7 +664,6 @@
       }
     });
 
-    // 頁面載入完成後連線 IndexedDB
     window.addEventListener('DOMContentLoaded', () => {
       initDB().then(() => {
         renderGalleryGrid();
