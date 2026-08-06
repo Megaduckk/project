@@ -161,24 +161,26 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 10px;
+      padding: 0;
+      margin: 0;
       position: relative;
-      background: #252525;
+      overflow: hidden;
+      background: #111;
     }
 
     .page-left {
-      border-right: 1px solid #333;
-      background: #222;
+      border-right: none;
+      background: #111;
     }
 
     .page-right {
-      background: #282828;
+      background: #111;
     }
 
     .image-content {
       width: 100%;
       height: 100%;
-      object-fit: contain;
+      object-fit: cover;
       display: none;
       background: transparent;
     }
@@ -487,29 +489,27 @@
       tipEl.style.display = "none";
     }
 
+    const SUPABASE_URL = "https://xbaebmbyyajcucxvcxdb.supabase.co/storage/v1/object/public/books";
+
     function renderGalleryGrid() {
-      if (!db) return;
       const gridContainer = document.getElementById('gridContainer');
       gridContainer.innerHTML = "";
 
       for (let b = 1; b <= TOTAL_BOOKS; b++) {
-        const key = `book${b}_cover`;
         const card = document.createElement('div');
         card.className = 'book-card';
-        card.id = `card_${b}`;
         card.onclick = (() => () => openBook(`book${b}`))();
-        card.innerHTML = `<span class="placeholder-text">BOOK ${b}</span>`;
-        gridContainer.appendChild(card);
 
-        getDBImage(key, function(data) {
-          const el = document.getElementById(`card_${b}`);
-          if (!el) return;
-          if (data) {
-            el.innerHTML = `<img class="card-cover-img" src="${data}" alt="Book ${b} cover">`;
-          } else {
-            el.innerHTML = `<span class="placeholder-text">BOOK ${b}</span>`;
-          }
-        });
+        const img = document.createElement('img');
+        img.className = 'card-cover-img';
+        img.src = `${SUPABASE_URL}/book${b}/book${b}cover.png`;
+
+        img.onerror = function () {
+          card.innerHTML = `<span class="placeholder-text">BOOK ${b}</span>`;
+        };
+
+        card.appendChild(img);
+        gridContainer.appendChild(card);
       }
     }
 
